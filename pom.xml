@@ -27,6 +27,10 @@
             <artifactId>LimaCore-${aol}-shared-${mode}</artifactId>
             <version>1.7.9</version>
         </dependency>
+        <dependency>
+            <groupId>fr.soleil.lib</groupId>
+            <artifactId>YAT-${aol}-${library}-${mode}</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
@@ -37,8 +41,10 @@
                 <configuration>
                     <cpp>
                         <sourceDirectory>src</sourceDirectory>
+                        <sourceDirectory>lib/SFAXCommunications/src</sourceDirectory>
                         <includePaths>
                             <includePath>include</includePath>
+                            <includePath>lib/SFAXCommunications/include</includePath>
                         </includePaths>
                         <!-- define less verbose mode for gcc-->
                         <options>
