@@ -14,17 +14,18 @@ void GpibComms::disconnect()
     try
     {
         m_is_initialized = false;
+        if(!m_sock) return;
         bool bl = m_sock->connection_status() ==  yat::ClientSocket::CONNECTED_YES;
         if(bl && m_sock)
         {
             m_sock->disconnect();
-            yat::Socket::terminate();
             YAT_INFO << "GpibComms: Socket disconnected!" << std::endl;
         }
         else
         {
             YAT_INFO << "GpibComms: Socket already disconnected!" << std::endl;
         }
+        yat::Socket::terminate();
     }
     catch(const yat::SocketException & se)
     {
@@ -45,6 +46,7 @@ void GpibComms::connect()
     YAT_TRACE("GpibComms::connect");
     try
     {
+        m_is_initialized = false;
         yat::Socket::init();
         m_sock.reset(new yat::ClientSocket(yat::Socket::TCP_PROTOCOL));
 
@@ -93,7 +95,9 @@ void GpibComms::gpib_init()
             write(params[i]);
         }
 
-        YAT_INFO << read(); // Get version
+        std::string ver;
+        read(ver);
+        YAT_INFO << ver; // Get version
     }
     catch(const yat::Exception & ex)
     {
@@ -104,7 +108,6 @@ void GpibComms::gpib_init()
 
 std::string GpibComms::escape_chars(const std::string& input)
 {
-    YAT_TRACE("GpibComms::escape_chars");
     std::string output;
     unsigned char c;
 
@@ -138,27 +141,26 @@ void GpibComms::gpib_write(const std::string & argin, bool ask_talk)
     if(ask_talk) write(ASK_TALK_STR);
 }
 
-std::string GpibComms::gpib_read(bool ask_talk)
+void GpibComms::gpib_read(std::string & result,bool ask_talk)
 {
     YAT_TRACE("GpibComms::gpib_read");
     if(ask_talk) write(ASK_TALK_STR);
     wait_data(m_config.timeout, false);
-    return read();
+    read(result);
 }
 
-std::string GpibComms::gpib_blocking_read(size_t timeout, bool ask_talk,
-    bool throw_exception)
+void GpibComms::gpib_blocking_read(std::string & result, size_t timeout,
+    bool ask_talk)
 {
     YAT_TRACE("GpibComms::gpib_blocking_read");
     if(ask_talk) write(ASK_TALK_STR);
-    if(wait_data(timeout, throw_exception))
+    if(wait_data(timeout, true))
     {
-        return read();
+        read(result);
     }
-    return "";
 }
 
-std::string GpibComms::gpib_flush(bool ask_talk)
+void GpibComms::gpib_flush(std::string & result, bool ask_talk)
 {
     YAT_TRACE("GpibComms::gpib_flush");
     if(ask_talk)
@@ -168,9 +170,8 @@ std::string GpibComms::gpib_flush(bool ask_talk)
     wait_data(m_config.timeout, false);
     if(is_to_read())
     {
-        return read();
+        read(result);
     }
-    return "";
 }
 
 bool GpibComms::wait_data(size_t timeout, bool throw_exception)
@@ -213,7 +214,6 @@ bool GpibComms::is_to_read()
 
 void GpibComms::write(const std::string & argin)
 {
-    YAT_TRACE("GpibComms::write");
     if(!m_is_initialized)
     {
         THROW_EXCEPTION(
@@ -231,7 +231,7 @@ void GpibComms::write(const std::string & argin)
     try
     {
         m_sock->send(argin);
-        YAT_INFO << "GpibComms::write string = ["
+        YAT_RESULT << "GpibComms::write string = ["
             << Utils::make_string_readable(argin)
             << "], hex = "
             << Utils::string_to_hex_digits(argin)
@@ -250,9 +250,8 @@ void GpibComms::write(const std::string & argin)
     }
 }
 
-std::string GpibComms::read()
+void GpibComms::read(std::string & result)
 {
-    YAT_TRACE("GpibComms::read");
     if(!m_is_initialized)
     {
         THROW_EXCEPTION(
@@ -261,18 +260,16 @@ std::string GpibComms::read()
             "GpibComms::read");
     }
 
-    std::string answer;
-
     yat::Socket::Data data(DATA_SIZE, true);
 
     try
     {
         long number = m_sock->receive(data);
-        answer = data.base();
-        YAT_INFO << "GpibComms::read answer = ["
-            << Utils::make_string_readable(answer)
+        result = data.base();
+        YAT_RESULT << "GpibComms::read answer = ["
+            << Utils::make_string_readable(result)
             << "], answer size = "
-            << answer.size()
+            << result.size()
             << std::endl;
     }
     catch(const yat::SocketException & se)
@@ -286,7 +283,6 @@ std::string GpibComms::read()
             "Unknown error during socket receive!",
             "GpibComms::read");
     }
-    return answer;
 }
 
 

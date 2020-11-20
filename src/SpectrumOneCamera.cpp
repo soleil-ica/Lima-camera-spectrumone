@@ -7,80 +7,41 @@ using namespace lima;
 using namespace lima::SpectrumOne;
 
 
-Camera::Camera(GpibConfig config, std::string tables_path):
+Camera::Camera(GpibConfig config, std::string tables_path, std::string expert_config):
     m_camera_name("SpectrumOneCCD"),
     m_as_master(true),
     m_config(config),
-    m_tables_path(tables_path)
+    m_tables_path(tables_path),
+    m_expert_config(expert_config)
 {
 }
 
 Camera::~Camera()
 {
-    try
-    {
-        m_command->disconnect();
-    }
-    catch(const yat::Exception & e)
-    {
-        throw LIMA_HW_EXC(Error, "Error when disconnecting from camera!\n" + e.to_string());
-    }
+    YAT_INFO << "Camera::~Camera" << std::endl;
 }
 
 void Camera::init(EventCtrlObj* event)
 {
     m_command.reset(new SFAXCommunications::CommandTask(m_config,
-        EventCallback::instanciate(*event, &EventCtrlObj::eventReportCallback), m_tables_path));
+        EventCallback::instanciate(*event, &EventCtrlObj::eventReportCallback),
+        m_tables_path, m_expert_config));
 
-    m_command->connect();
     m_command->init_sequence();
 }
 
-char Camera::whereAmI()
+void Camera::forceConfig()
 {
     m_command->init_sequence(true);
 }
 
-
-
-void Camera::rebootIfHung()
+void Camera::startAcq()
 {
-    //long i = 222;
-    //m_comms->gpibWrite("\xDE");
-    //m_command->reboot
-
-    //m_command->gpibWrite("O2000\x0");
-    //m_command->force_tables();
-
-    YAT_INFO << "Received:" <<  m_command->gpib_read() << std::endl;
-}
-
-
-void Camera::write(const std::string & argin)
-{
-    try
-    {
-        m_command->gpib_write(argin);
-    }
-    catch(const yat::Exception & e)
-    {
-        //m_is_error = true;
-        throw LIMA_HW_EXC(Error, "Cannot write!" + e.to_string());
-    }
-}
-
-const std::string& Camera::read(void)
-{
-    try
-    {
-        return m_command->gpib_read();
-    }
-    catch(const yat::Exception & e)
-    {
-        //m_is_error = true;
-        throw LIMA_HW_EXC(Error, "Cannot read!" + e.to_string());
-    }
-
+    m_command->snap();
+    // StdBufferCbMgr& buffer_mgr = m_buffer_ctrl_obj.getBuffer();
+    // buffer_mgr.setStartTimestamp(Timestamp::now());
+    // FrameDim frame_dim = buffer_mgr.getFrameDim();
+    // Size frame_size = frame_dim.getSize();
 }
 
 /** @brief test if the camera is monochrome
@@ -93,21 +54,27 @@ void Camera::getStatus(HwInterface::StatusType& status)
 {
     switch(m_command->get_state())
     {
-        default:
         case State::Fault:
-        status.det = DetFault;
-        status.acq = AcqFault;
+        status.set(BasicStatus::Fault);
         break;
 
         case State::Idle:
-        status.det = DetIdle;
-        status.acq = AcqReady;
+        status.set(BasicStatus::Ready);
+        break;
+
+        case State::Busy:
+        status.set(BasicStatus::Exposure);
         break;
 
         case State::Init:
-        status.det = DetIdle;
-        status.acq = AcqConfig;
+        case State::Config:
+        status.set(BasicStatus::Config);
         break;
+
+        default:
+        status.set(BasicStatus::Fault);
+        break;
+
     }
 }
 
@@ -124,20 +91,21 @@ void Camera::setVideoMode(VideoMode aMode)
 {
 }
 
-// void Camera::_allocBuffer()
-// {
-// }
-/** @brief start the acquisition.
-    must have m_video != NULL and previously call _allocBuffer
-*/
-void Camera::startAcq()
-{
-}
+
 
 void Camera::reset()
 {
 }
 
+void Camera::setExpTime(const double & exp_time)
+{
+    m_command->set_exp_time(static_cast<int>(exp_time*1000));
+}
+
+void Camera::getExpTime(double & exp_time)
+{
+    
+}
 
 
 // void Camera::_newFrameCBK(tPvFrame* aFrame)

@@ -47,6 +47,11 @@
                             <includePath>lib/SFAXCommunications/include</includePath>
                         </includePaths>
                         <!-- define less verbose mode for gcc-->
+                        <defines>
+                            <define>YAT_ENABLE_LOG</define>
+                            <!-- <define>YAT_ENABLE_TRACE</define> -->
+                            <define>SOLEIL_YAT_STREAM</define>
+                        </defines>
                         <options>
                             <option>-w</option>
                         </options>

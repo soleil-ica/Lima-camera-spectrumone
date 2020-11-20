@@ -47,11 +47,14 @@ void SyncCtrlObj::getTrigMode(TrigMode &trig_mode)
 
 void SyncCtrlObj::setExpTime(double exp_time)
 {
+    YAT_ERROR << "SyncCtrlObj::setExpTime" << std::endl;
+    m_cam->setExpTime(exp_time);
 }
 
 void SyncCtrlObj::getExpTime(double &exp_time)
 {
-    exp_time = 1;
+    YAT_ERROR << "SyncCtrlObj::getExpTime" << std::endl;
+    m_cam->getExpTime(exp_time);
 }
 
 void SyncCtrlObj::setLatTime(double  lat_time)
@@ -87,18 +90,20 @@ void SyncCtrlObj::getNbHwFrames(int& nb_frames)
 void SyncCtrlObj::getValidRanges(ValidRangesType& valid_ranges)
 {
   valid_ranges.min_exp_time = 1e-6; // Don't know
-  valid_ranges.max_exp_time = 60.; // Don't know
+  valid_ranges.max_exp_time = 6000.; // Don't know
   valid_ranges.min_lat_time = 0.; // Don't know
   valid_ranges.max_lat_time = 0.; // Don't know
 }
 
 void SyncCtrlObj::startAcq()
 {
+    YAT_ERROR << "SyncCtrlObj::startAcq" << std::endl;
     m_started = true;
 }
 
 void SyncCtrlObj::stopAcq(bool clearQueue)
 {
+    YAT_ERROR << "SyncCtrlObj::stopAcq" << std::endl;
     m_started = false;
 }
 

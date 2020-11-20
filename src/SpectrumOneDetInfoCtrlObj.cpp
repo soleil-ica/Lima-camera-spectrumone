@@ -50,7 +50,7 @@ void DetInfoCtrlObj::getDetectorType(std::string& det_type)
 
 void DetInfoCtrlObj::getDetectorModel(std::string& det_model)
 {
-    det_model = "2000";
+    det_model = "3000";
 }
 
 void DetInfoCtrlObj::registerMaxImageSizeCallback(HwMaxImageSizeCallback& cb)

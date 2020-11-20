@@ -21,16 +21,18 @@ namespace lima
   namespace SpectrumOne
   {
     class EventCtrlObj;
+    class BufferCtrlObj;
 
     typedef SFAXCommunications::GpibComms::GpibConfig GpibConfig;
     typedef SFAXCommunications::CommandTask::State State;
     typedef SFAXCommunications::CommandTask::EventCallback EventCallback;
+    typedef HwInterface::StatusType::Basic BasicStatus;
 
     class Camera : public HwMaxImageSizeCallbackGen
     {
     public:
-        Camera(GpibConfig config, std::string tables_path);
-        ~Camera();
+        Camera(GpibConfig config, std::string tables_path, std::string expert_config);
+        virtual ~Camera();
 
         void init(EventCtrlObj* event);
         
@@ -42,20 +44,21 @@ namespace lima
         void        checkBin(Bin&);
         void        setBin(const Bin&);
         void        getBin(Bin&);
+        void        setExpTime(const double &);
+        void        getExpTime(double &);
+
 
         void        getCameraName(std::string& name);
 
         void        startAcq();
         void        reset();
         void        getStatus(HwInterface::StatusType& status);
-
+        
         const std::string& read();
-        void        rebootIfHung();
-        char        whereAmI();
+        void        forceConfig();
         void        write(const std::string& argin);
 
         bool        m_as_master;
-        void        reportExceptionCallback(const std::string & str);
 
 
 
@@ -65,7 +68,8 @@ namespace lima
         VideoMode       m_video_mode;
         std::string     m_camera_name;
         std::string     m_tables_path;
-        yat::UniquePtr<SFAXCommunications::CommandTask>   m_command;
+        std::string     m_expert_config;
+        yat::UniquePtr<SFAXCommunications::CommandTask, yat::TaskExiter>   m_command;
     };
   }
 }

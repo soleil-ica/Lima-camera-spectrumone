@@ -1,6 +1,8 @@
 #ifndef GPIBPROLOGIX_H
 #define GPIBPROLOGIX_H
 
+
+
 #include <yat/network/ClientSocket.h>
 #include <yat/memory/UniquePtr.h>
 
@@ -30,24 +32,24 @@ public:
 
     struct GpibConfig
     {
-        std::string     host;
-        unsigned long   port;
-        unsigned long   gpib_address;
-        unsigned long   timeout;
+        std::string host;
+        size_t      port;
+        size_t      gpib_address;
+        size_t      timeout;
     };
     
     GpibComms(GpibConfig config);
-    virtual ~GpibComms() {};
+    virtual ~GpibComms() {YAT_LOG("~GpibComms()");}
 
     void disconnect();
     void connect();
 
     void gpib_init();
     void gpib_write(const std::string & argin, bool ask_talk=true);
-    std::string gpib_read(bool ask_talk=false);
-    std::string gpib_blocking_read(size_t timeout, bool ask_talk=false,
-        bool throw_exception=true);
-    std::string gpib_flush(bool ask_talk=false);
+    void gpib_read(std::string & result, bool ask_talk=false);
+    void gpib_blocking_read(std::string & result, size_t timeout,
+        bool ask_talk=false);
+    void gpib_flush(std::string & result, bool ask_talk=false);
     
 
 private:
@@ -59,7 +61,7 @@ private:
     bool wait_data(size_t timeout, bool throw_exception);
     bool is_to_read();
 
-    std::string read();
+    void read(std::string & result);
     void write(const std::string & dta);
 
     static std::string sock_status(int val);

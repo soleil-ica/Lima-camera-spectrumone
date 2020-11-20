@@ -12,14 +12,11 @@
 #include "Commands.hpp"
 #include "Utils.h"
 
-#define CONNECT_SOCKET  (yat::FIRST_USER_MSG + 101)
+//#define CONNECT_SOCKET  (yat::FIRST_USER_MSG + 101)
 #define INIT_SEQUENCE   (yat::FIRST_USER_MSG + 102)
-
-#define STATE(state)                        \
-{                                           \
-    yat::AutoMutex<> guard(m_data_lock);    \
-    m_state = state;                        \
-}
+#define SET_EXP_TIME    (yat::FIRST_USER_MSG + 103)
+#define SET_GAIN        (yat::FIRST_USER_MSG + 104)
+#define SNAP            (yat::FIRST_USER_MSG + 105)
 
 namespace SFAXCommunications
 {
@@ -29,7 +26,7 @@ class CommandTask : public yat::Task
 {
 public:
     enum State {
-        Init, Idle, Fault,
+        Init, Config, Idle, Fault, Busy,
     };
 
     enum EventType {
@@ -45,17 +42,13 @@ public:
     YAT_DEFINE_CALLBACK(EventCallback, EventData);
 
     CommandTask(GpibComms::GpibConfig config, EventCallback report_event,
-        std::string tables_path);
-    virtual ~CommandTask() {}
-
+        std::string tables_path, std::string expert_config);
+    virtual ~CommandTask();
     
-
-    void disconnect();
-    void connect();
-    void init_sequence(bool force_config = false);
-
-    void gpib_write(std::string argin) {m_comms->gpib_write(argin);}
-    const std::string gpib_read() {return m_comms->gpib_read();}
+    void init_sequence(const bool & force_config = false);
+    void set_exp_time(const int & exp_time);
+    void set_gain(const int & gain);
+    void snap();
 
 
     State get_state();
@@ -65,35 +58,46 @@ protected:
     virtual void handle_message(yat::Message & msg);
 
 private:
+    // Shared:
     yat::Mutex m_data_lock;
-    EventCallback m_report_event;
     State m_state;
+
+    // Used by thread:
+    EventCallback m_report_event;
     std::string m_tables_path;
+    std::string m_expert_config;
     yat::UniquePtr<GpibComms> m_comms;
 
 
     // CommandFunctions.cpp
     std::string command_and_wait(const Command & cmd, size_t timeout,
-        std::vector<std::string> * args = 0);
+        std::vector<std::string> * args, bool ack = false);
+    std::string command_and_wait(const Command & cmd, size_t timeout, bool ack = false)
+        {return command_and_wait(cmd, timeout, 0, ack);}
     std::string command_and_read(const Command & cmd,
-        std::vector<std::string> * args = 0);
+        std::vector<std::string> * args, bool ack = false);
+    std::string command_and_read(const Command & cmd, bool ack = false)
+        {return command_and_read(cmd, 0, ack);}
     std::string command_and_flush(const Command & cmd,
-        std::vector<std::string> * args = 0);
-
+        std::vector<std::string> * args, bool ack = false);
+    std::string command_and_flush(const Command & cmd, bool ack = false)
+        {return command_and_flush(cmd, 0, ack);}
 
     void send_table(const std::string & table, unsigned offset);
     static void get_table(const std::string & tab_name, std::vector<std::string> & output_vect);
-    std::string reset(size_t number_retries);
+    void reset(std::string & reply, const size_t & number_retries);
     void config_CCD();
     std::string read_adc_temperature();
-
-    
+    std::vector<std::string> get_config(const std::string & config_str);
 
     static std::string error_code(int val);
 
     // CommandMessages.cpp:
     void t_connect_gpib();
-    void t_init_sequence(bool force_config);
+    void t_init_sequence(const bool & force_config);
+    void t_set_gain(const int & gain);
+    void t_set_exp_time(const int & exp_time);
+    void t_snap();
 
     // ReportEvent
     inline void report_event(const std::string & str, EventType evt)
@@ -109,6 +113,13 @@ private:
         {report_event(str, EventType::Info);}
     void report_fatal(const std::string & str)
         {report_event(str, EventType::Fatal);}
+
+    // State
+    void set_state(State state)
+    {
+        yat::AutoMutex<> guard(m_data_lock);
+        m_state = state; 
+    }
 
 }; // Class
 
