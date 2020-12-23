@@ -14,24 +14,34 @@ namespace SFAXCommunications
     class Command
     {
         public:
-        Command(std::string name, std::string str, char term,
-        std::string ack, unsigned long delay)
+        Command(std::string name, std::string str, char term, std::string ack, unsigned long delay, bool talk_auto)
         {
             m_name = name;
             m_str = str;
             m_term = term;
             m_ack = ack;
             m_delay = delay;
+            m_talk_auto = talk_auto;
         }
 
-        Command(std::string name, std::string str, char term,
-        std::string ack)
+        Command(std::string name, std::string str, char term, std::string ack, unsigned long delay)
+        {
+            m_name = name;
+            m_str = str;
+            m_term = term;
+            m_ack = ack;
+            m_delay = delay;
+            m_talk_auto = true;
+        }
+
+        Command(std::string name, std::string str, char term, std::string ack)
         {
             m_name = name;
             m_str = str;
             m_term = term;
             m_ack = ack;
             m_delay = NO_DELAY;
+            m_talk_auto = true;
         }
 
         Command(std::string name, std::string str, char term)
@@ -41,6 +51,7 @@ namespace SFAXCommunications
             m_term = term;
             m_ack = NO_ACK;
             m_delay = NO_DELAY;
+            m_talk_auto = true;
         }
 
         Command(std::string name, std::string str)
@@ -50,11 +61,14 @@ namespace SFAXCommunications
             m_term = NO_TERM;
             m_ack = NO_ACK;
             m_delay = NO_DELAY;
+            m_talk_auto = true;
         }
 
         virtual ~Command() {}
 
         const std::string name() const {return m_name;}
+
+        bool is_talk_auto() const {return m_talk_auto;}
 
         const std::string str(std::vector<std::string> * args) const 
         {
@@ -95,6 +109,7 @@ namespace SFAXCommunications
         std::string m_str;
         std::string m_ack;
         std::string m_name;
+        bool m_talk_auto;
     };
 
     static const Command CCD_WHERE_AM_I("WhereAmI", " ");
@@ -109,13 +124,13 @@ namespace SFAXCommunications
     static const Command CCD_READ_GAIN("ReadGain", "Z303,0", '\r');
     static const Command CCD_SET_GAIN("SetGain", "Z302,0", '\r', "o");
     static const Command CCD_SET_EXP_TIME("SetExpTime", "Z301,0", '\r', "o");
-    static const Command CCD_GET_DATA_SIZE("GetDataSize", "Z327,0", '\r', NO_ACK, 500);
+    static const Command CCD_GET_DATA_SIZE("GetDataSize", "Z327,0", '\r', NO_ACK, 5000, false);
     static const Command CCD_START("Start", "Z311,0", '\r', "o");
-    static const Command CCD_READ_IMAGE("ReadImage", "Z315,0", '\r');
+    static const Command CCD_READ_IMAGE("ReadImage", "Z315,0", '\r', "o", 500, false);
     static const Command CCD_RESET_IMAGE("ResetImage", "Z317,0", '\r', "o");
-    static const Command CCD_UNKNOWN_1("Unknown1", "Z330,0", '\r', "o");
-    static const Command CCD_UNKNOWN_2("Unknown2", "Z348,0", '\r', "o");
-    static const Command CCD_UNKNOWN_3("Unknown3", "Z352,0", '\r');
+    static const Command CCD_UNKNOWN_1("Unknown1", "Z330,0,0", '\r', "o", 500);
+    static const Command CCD_UNKNOWN_2("Unknown2", "Z348,0,0", '\r', "o", 500);
+    static const Command CCD_UNKNOWN_3("Unknown3", "Z352,0,1", '\r', NO_ACK, 500);
     static const Command CCD_SET_SHUTTER("SetShutter", "Z320,0", '\r', "o");
     static const Command CCD_STOP_ACQ("StopAcquisition", "Z314,0", '\r', "o");
     static const Command CCD_STATUS("GetStatus", "Z312,0", '\r', "o");

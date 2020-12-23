@@ -63,7 +63,7 @@ void CommandTask::t_connect_gpib()
             yat::Thread::sleep(5000);
             m_comms->connect();
         }
-        
+
         report_info("CONNECT SOCKET: Successful socket connexion!\n");
     }
     catch(const yat::Exception & ex)
@@ -89,6 +89,7 @@ void CommandTask::t_connect_gpib()
 
 void CommandTask::t_init_sequence(const bool & force_config)
 {
+    bool config_overwrite = force_config;
     if(get_state() == State::Fault)
     {
         report_error("INIT SEQUENCE: Can not launch sequence, fault state!\n");
@@ -108,28 +109,21 @@ void CommandTask::t_init_sequence(const bool & force_config)
 
         if(IS_EQUAL(result, "B"))
         {
+            config_overwrite = true;
             result = command_and_read(CCD_START_MAIN_PROGRAM, true);
-            config_CCD();
             result = command_and_read(CCD_WHERE_AM_I);
         }
-        else if(force_config)
-        {
-            config_CCD();
-            result = command_and_read(CCD_WHERE_AM_I);
-        }
-
         if(IS_EQUAL(result, "F"))
         {
             result = command_and_read(CCD_INIT);
             if(IS_EQUAL(result, "o1\r"))
             {
-                report_info("INIT SEQUENCE: Camera is ready! Hardware successfully detected!\n");
-                set_state(State::Idle);
+                report_info("INIT SEQUENCE: Hardware successfully detected!\n");
+
             }
             else if(IS_EQUAL(result, "o0\r"))
             {
-                report_info("INIT SEQUENCE: Camera is ready! No hardware detected: Emulation Mode!\n");
-                set_state(State::Idle);
+                report_info("INIT SEQUENCE: No hardware detected: Emulation Mode!\n");
             }
             else
             {
@@ -145,8 +139,11 @@ void CommandTask::t_init_sequence(const bool & force_config)
                     "Received: " + result,
                     "INIT SEQUENCE");
         }
-
-        
+        if(config_overwrite)
+        {
+            config_CCD();
+        }
+        set_state(State::Idle);
 
         // result = command_and_read(READ_CONFIG);
         // result = command_and_read(READ_TEMP);
@@ -234,8 +231,8 @@ void CommandTask::t_snap()
     try
     {
         // Set gain 1
-        args[0] = "1";
-        command_and_read(CCD_SET_GAIN, &args, true);
+        // args[0] = "1";
+        // command_and_read(CCD_SET_GAIN, &args, true);
 
         // Read gain
         command_and_read(CCD_READ_GAIN);
@@ -264,19 +261,72 @@ void CommandTask::t_snap()
         args[0] = "0";
         args[1] = "0";
         args[2] = "0";
-        args[3] = "1024";
-        args[4] = "256";
+        args[3] = "2000";
+        args[4] = "800";
         args[5] = "1";
         args[6] = "1";
         command_and_read(CCD_DEFINE_AREA, &args, true);
+
 
         result = command_and_read(CCD_GET_DATA_SIZE);
 
         result = command_and_read(CCD_STATUS);
 
+        // if status = 0
+
+
+
+
+
+
         args.resize(1);
         args[0] = "1";
-        //command_and_read(CCD_START, &args, true);
+        command_and_read(CCD_START, &args, true);
+
+        std::vector<std::string> image;
+
+        do
+        {
+            yat::Thread::sleep(800);
+            result = command_and_read(CCD_STATUS);
+
+        }while(IS_NOT_EQUAL(result, "o0\r"));
+
+        command_and_read(CCD_RESET_IMAGE, true);
+
+        std::string image_as_str = "";
+
+        m_comms->gpib_write(CCD_READ_IMAGE.str(0));
+
+        size_t count = 0;
+
+        // YAT_ERROR << "BEFORE SLEEP" << count << std::endl;
+
+        // yat::Thread::sleep(100000);
+
+        // YAT_ERROR << "AFTER SLEEP" << count << std::endl;
+
+        while(m_comms->gpib_read_all(image_as_str))
+        {
+            count += image_as_str.size();
+            YAT_ERROR << "Scount =" << count << std::endl;
+            //yat::Thread::sleep(500);
+        }
+
+
+        m_comms->gpib_flush(result, true);
+        m_comms->gpib_flush(result, true);
+
+
+
+
+        set_state(State::Idle);
+
+        report_info("SNAP: Qca ok!\n");
+
+        YAT_ERROR << "SNap ok size received =" << count << std::endl;
+
+        return;
 
         yat::Thread::sleep(5000);
 
@@ -289,6 +339,8 @@ void CommandTask::t_snap()
         command_and_read(CCD_RESET_IMAGE, true);
 
         //result = command_and_flush(CCD_READ_IMAGE, true);
+
+        report_info("SNAP: Qca ok!\n");
 
         //m_comms->gpib_flush(result);
         set_state(State::Idle);

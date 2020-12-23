@@ -54,7 +54,7 @@ void CommandTask::send_table(const std::string & table, unsigned offset)
             args.push_back(TO_STRING(offset));
             args.push_back(TO_STRING(values[i].size()));
 
-            result = command_and_wait(CCD_WRITE_DATA, 5000, &args, true);
+            result = command_and_wait(CCD_WRITE_DATA, 20000, &args);
 
             // send raw data
             m_comms->gpib_write(values[i], false);
@@ -112,8 +112,6 @@ void CommandTask::config_CCD()
     offsets.push_back(0XE800);
     offsets.push_back(0XEC00);
 
-    result = command_and_read(CCD_INIT);
-
     for(i=0; i<8; i++)
     {
         send_table(m_tables_path + tab_names[i] + suffix, offsets[i]);
@@ -140,4 +138,6 @@ void CommandTask::config_CCD()
     command_and_read(CCD_UNKNOWN_2);
 
     command_and_read(CCD_READ_CONFIG);
+
+    command_and_read(CCD_UNKNOWN_3);
 }

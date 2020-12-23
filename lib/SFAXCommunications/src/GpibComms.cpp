@@ -83,6 +83,8 @@ void GpibComms::gpib_init()
         std::vector<std::string> params;
 
         params.push_back("++mode 1\n");
+        params.push_back("++eot_enable 0\n");
+        //params.push_back("++eot_char 13\n");
         params.push_back("++auto 0\n");
         params.push_back("++eos 3\n");
         params.push_back("++eoi 1\n");
@@ -98,6 +100,11 @@ void GpibComms::gpib_init()
         std::string ver;
         read(ver);
         YAT_INFO << ver; // Get version
+
+        // write("++rst\n");
+        // yat::Thread::sleep(8000);
+
+
     }
     catch(const yat::Exception & ex)
     {
@@ -172,6 +179,31 @@ void GpibComms::gpib_flush(std::string & result, bool ask_talk)
     {
         read(result);
     }
+}
+
+bool GpibComms::gpib_read_all(std::string & result, bool ask_talk)
+{
+    bool did_read = false;
+    if(ask_talk)
+    {
+        write(ASK_TALK_STR);
+    }
+    wait_data(m_config.timeout, false);
+    std::string temp_buffer;
+    if(is_to_read())
+    {
+        result = "";
+        did_read = true;
+        do
+        {
+            m_sock->set_blocking_mode();
+            read(temp_buffer);
+            result += temp_buffer;
+            wait_data(m_config.timeout, false);
+        }while(is_to_read());
+    }
+    return did_read;
+
 }
 
 bool GpibComms::wait_data(size_t timeout, bool throw_exception)

@@ -13,7 +13,7 @@
 
 #include "Utils.h"
 
-#define DATA_SIZE 65536
+#define DATA_SIZE 5000000
 #define ASK_TALK_STR "++read eoi\n"
 
 #define RETHROW_SOCKET_EXCEPTION(ex)                            \
@@ -50,6 +50,7 @@ public:
     void gpib_blocking_read(std::string & result, size_t timeout,
         bool ask_talk=false);
     void gpib_flush(std::string & result, bool ask_talk=false);
+    bool gpib_read_all(std::string & result, bool ask_talk=false);
     
 
 private:

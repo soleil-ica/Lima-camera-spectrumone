@@ -9,9 +9,9 @@ std::string CommandTask::command_and_wait(const Command & cmd, size_t timeout,
     try
     {
         std::string result;
-        m_comms->gpib_write(cmd.str(args));
+        m_comms->gpib_write(cmd.str(args), cmd.is_talk_auto());
         cmd.sleep();
-        m_comms->gpib_blocking_read(result, timeout);
+        m_comms->gpib_blocking_read(result, timeout, !cmd.is_talk_auto());
         if(ack)
         {
             if(!cmd.is_ack(result))
@@ -39,9 +39,9 @@ std::string CommandTask::command_and_read(const Command & cmd,
     try
     {
         std::string result;
-        m_comms->gpib_write(cmd.str(args));
+        m_comms->gpib_write(cmd.str(args), cmd.is_talk_auto());
         cmd.sleep();
-        m_comms->gpib_read(result);
+        m_comms->gpib_read(result, !cmd.is_talk_auto());
         if(ack)
         {
             if(!cmd.is_ack(result))
@@ -69,9 +69,9 @@ std::string CommandTask::command_and_flush(const Command & cmd,
     try
     {
         std::string result;
-        m_comms->gpib_write(cmd.str(args));
+        m_comms->gpib_write(cmd.str(args), cmd.is_talk_auto());
         cmd.sleep();
-        m_comms->gpib_flush(result);
+        m_comms->gpib_flush(result, !cmd.is_talk_auto());
         if(ack)
         {
             if(!cmd.is_ack(result))
