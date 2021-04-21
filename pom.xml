@@ -41,10 +41,10 @@
                 <configuration>
                     <cpp>
                         <sourceDirectory>src</sourceDirectory>
-                        <sourceDirectory>lib/SFAXCommunications/src</sourceDirectory>
+                        <sourceDirectory>lib/SpectrumComms/src</sourceDirectory>
                         <includePaths>
                             <includePath>include</includePath>
-                            <includePath>lib/SFAXCommunications/include</includePath>
+                            <includePath>lib/SpectrumComms/include</includePath>
                         </includePaths>
                         <!-- define less verbose mode for gcc-->
                         <defines>

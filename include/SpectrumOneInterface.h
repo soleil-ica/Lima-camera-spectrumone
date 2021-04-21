@@ -9,18 +9,21 @@ namespace lima
   {
     class Camera;
     class DetInfoCtrlObj;
-    class BufferCtrlObj;
     class SyncCtrlObj;
     class EventCtrlObj;
+    class RoiCtrlObj;
+    class BinCtrlObj;
 
     class Interface : public HwInterface
     {
     private:
-        DetInfoCtrlObj* m_det_info;
-        Camera*         m_cam;
-        BufferCtrlObj*  m_buffer;
-        SyncCtrlObj*    m_sync;
-        EventCtrlObj*   m_event;
+        DetInfoCtrlObj*     m_det_info;
+        Camera*             m_cam;
+        HwBufferCtrlObj*    m_buffer;
+        SyncCtrlObj*        m_sync;
+        EventCtrlObj*       m_event;
+        RoiCtrlObj*         m_roi;
+        BinCtrlObj*         m_bin;
 
     public:
         Interface(Camera*);

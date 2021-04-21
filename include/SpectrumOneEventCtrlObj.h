@@ -9,15 +9,14 @@ namespace lima
   namespace SpectrumOne
   {
 
-    typedef SFAXCommunications::CommandTask::EventData EventData;
-    typedef SFAXCommunications::CommandTask::EventType EventType;
+    typedef SpectrumComms::EventType EventType;
 
     class EventCtrlObj : public HwEventCtrlObj
     {
     public:
     EventCtrlObj() {};
     virtual ~EventCtrlObj() {};
-    void eventReportCallback(EventData data);
+    void reportCameraEvent(const std::string & str, SpectrumComms::EventType evt);
     Event::Severity getSeverity(EventType type);
 
     };

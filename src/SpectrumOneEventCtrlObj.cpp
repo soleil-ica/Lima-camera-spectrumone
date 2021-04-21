@@ -3,10 +3,10 @@
 using namespace lima;
 using namespace lima::SpectrumOne;
 
-void EventCtrlObj::eventReportCallback(EventData data)
+void EventCtrlObj::reportCameraEvent(const std::string & str, SpectrumComms::EventType evt)
 {
-    Event *my_event = new Event(Hardware, getSeverity(data.evt), 
-        Event::Camera, Event::Default, "\n"+data.str);
+    Event *my_event = new Event(Hardware, getSeverity(evt), 
+        Event::Camera, Event::Default, "\n"+str);
     reportEvent(my_event);
 }
 

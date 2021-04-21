@@ -1,20 +1,19 @@
 #ifndef SPECTRUMONESYNCCTRLOBJ_H
 #define SPECTRUMONESYNCCTRLOBJ_H
 
-#include "lima/HwSyncCtrlObj.h"
-#include "lima/HwInterface.h"
+#include <lima/HwSyncCtrlObj.h>
+#include <lima/HwInterface.h>
 
 namespace lima
 {
   namespace SpectrumOne
   {
     class Camera;
-    class BufferCtrlObj;
 
     class SyncCtrlObj : public HwSyncCtrlObj
     {
     public:
-      SyncCtrlObj(Camera*, BufferCtrlObj*);
+      SyncCtrlObj(Camera*, HwBufferCtrlObj*);
       virtual ~SyncCtrlObj();
 
       virtual bool checkTrigMode(TrigMode trig_mode);
@@ -27,25 +26,21 @@ namespace lima
       virtual void setLatTime(double  lat_time);
       virtual void getLatTime(double& lat_time);
 
-      virtual void setNbFrames(int  nb_frames);
-      virtual void getNbFrames(int& nb_frames);
+    //   virtual void setNbFrames(int  nb_frames);
+    //   virtual void getNbFrames(int& nb_frames);
 
       virtual void setNbHwFrames(int  nb_frames);
       virtual void getNbHwFrames(int& nb_frames);
 
       virtual void getValidRanges(ValidRangesType& valid_ranges);
 
-      void startAcq();
-      void stopAcq(bool clearQueue = true);
-      
-      void getStatus(HwInterface::StatusType&);
-
     private:
         Camera*         m_cam;
-        BufferCtrlObj*  m_buffer;
+        HwBufferCtrlObj*  m_buffer;
         TrigMode        m_trig_mode;
         int             m_nb_frames;
         bool            m_started;
+        double          m_exp_time;
     };
 
   } // namespace Prosilica

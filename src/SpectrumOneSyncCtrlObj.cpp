@@ -1,16 +1,16 @@
 #include <sstream>
 #include "SpectrumOneSyncCtrlObj.h"
-#include "SpectrumOneBufferCtrlObj.h"
 #include "SpectrumOneCamera.h"
 
 using namespace lima;
 using namespace lima::SpectrumOne;
 
-SyncCtrlObj::SyncCtrlObj(Camera *cam, BufferCtrlObj* buffer) :
+SyncCtrlObj::SyncCtrlObj(Camera *cam, HwBufferCtrlObj* buffer) :
     m_cam(cam),
     m_buffer(buffer),
     m_trig_mode(IntTrig),
     m_nb_frames(1),
+    m_exp_time(0),
     m_started(false)
 {
     m_access_mode = cam->m_as_master ? 
@@ -45,16 +45,17 @@ void SyncCtrlObj::getTrigMode(TrigMode &trig_mode)
     trig_mode = m_trig_mode;
 }
 
-void SyncCtrlObj::setExpTime(double exp_time)
+void SyncCtrlObj::setExpTime(double set_exp_time)
 {
     YAT_ERROR << "SyncCtrlObj::setExpTime" << std::endl;
-    m_cam->setExpTime(exp_time);
+    m_exp_time = set_exp_time;
+    m_cam->setExpTime(set_exp_time);
 }
 
-void SyncCtrlObj::getExpTime(double &exp_time)
+void SyncCtrlObj::getExpTime(double & get_exp_time)
 {
     YAT_ERROR << "SyncCtrlObj::getExpTime" << std::endl;
-    m_cam->getExpTime(exp_time);
+    get_exp_time = m_exp_time;
 }
 
 void SyncCtrlObj::setLatTime(double  lat_time)
@@ -67,24 +68,14 @@ void SyncCtrlObj::getLatTime(double& lat_time)
     lat_time = 0.;        // Don't know
 }
 
-void SyncCtrlObj::setNbFrames(int  nb_frames)
+void SyncCtrlObj::setNbHwFrames(int  nb_frames)
 {
     m_nb_frames = nb_frames;
 }
 
-void SyncCtrlObj::getNbFrames(int& nb_frames)
-{
-    nb_frames = m_nb_frames;
-}
-
-void SyncCtrlObj::setNbHwFrames(int  nb_frames)
-{
-    setNbFrames(nb_frames);
-}
-
 void SyncCtrlObj::getNbHwFrames(int& nb_frames)
 {
-    getNbFrames(nb_frames);
+    nb_frames = m_nb_frames;
 }
 
 void SyncCtrlObj::getValidRanges(ValidRangesType& valid_ranges)
@@ -93,21 +84,4 @@ void SyncCtrlObj::getValidRanges(ValidRangesType& valid_ranges)
   valid_ranges.max_exp_time = 6000.; // Don't know
   valid_ranges.min_lat_time = 0.; // Don't know
   valid_ranges.max_lat_time = 0.; // Don't know
-}
-
-void SyncCtrlObj::startAcq()
-{
-    YAT_ERROR << "SyncCtrlObj::startAcq" << std::endl;
-    m_started = true;
-}
-
-void SyncCtrlObj::stopAcq(bool clearQueue)
-{
-    YAT_ERROR << "SyncCtrlObj::stopAcq" << std::endl;
-    m_started = false;
-}
-
-void SyncCtrlObj::getStatus(HwInterface::StatusType& status)
-{
-    m_cam->getStatus(status);
 }
