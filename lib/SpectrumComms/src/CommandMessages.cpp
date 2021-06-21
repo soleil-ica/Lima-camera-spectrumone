@@ -405,12 +405,15 @@ void CommandTask::t_snap(const SnapInfo & frame)
         while(true){
             try{ 
                 m_interface.m_comms.gpib_read_raw(force);
-                unsigned char* dta = reinterpret_cast<unsigned char*>(m_interface.m_comms.getBuffer().base());
-                buff.memcpy(dta, m_interface.m_comms.getBuffer().length(), count);
+                unsigned char* data = reinterpret_cast<unsigned char*>(m_interface.m_comms.getBuffer().base());
+                buff.memcpy(data, m_interface.m_comms.getBuffer().length(), count);
                 count += m_interface.m_comms.getBuffer().length();
 
-                //report_info("Acquisition over, loading data... (" + TO_STRING(count) + " bytes loaded)");
-
+                YAT_FREQUENCY_LIMITED_STATEMENT(
+                    {
+                        m_interface.report_info("Acquisition over, loading data... (" + TO_STRING(count) + " bytes loaded) (expected: " + TO_STRING(expected_size) +")");
+                        YAT_INFO << "Buffer size received: " << m_interface.m_comms.getBuffer().length() << ", total: " << buff.size() << std::endl;
+                    }, 5);
                 if(force) force = false;
                 //YAT_ERROR << "size received =" << count << std::endl;
 
@@ -425,48 +428,47 @@ void CommandTask::t_snap(const SnapInfo & frame)
                 {
                     THROW_EXCEPTION(
                         "FAILED",
-                        "Didn't receive expected snap data after 5 retries!",
+                        "Didn't receive expected snap data after 3 retries!",
                         "CommandTask::SNAP");
                 }
             }
         }
 
-        yat::File data_file("/home/informatique/ica/ica/ah/output.dat");
-        std::string giga;
+        // yat::File data_file("/home/informatique/ica/ica/ah/output.dat");
+        // std::string giga;
 
-        for(size_t r=0; r<buff.size(); r++)
-        {
-            Utils::char_to_hex_digits(buff.base()[r], giga);
-            giga.push_back(' ');
-            if(!(r%16)) giga.push_back('\n');
-        }
+        // for(size_t r=0; r<buff.size(); r++)
+        // {
+        //     Utils::char_to_hex_digits(buff.base()[r], giga);
+        //     giga.push_back(' ');
+        //     if(!(r%16)) giga.push_back('\n');
+        // }
 
-        data_file.save(giga);
+        // data_file.save(giga);
 
 
 
-        YAT_ERROR << "Snap ok buff size =" << buff.length() << std::endl;
+        // YAT_ERROR << "Snap ok buff size =" << buff.length() << std::endl;
 
         m_interface.report_info("Data loaded!");
 
         unsigned short *ptr =  (unsigned short *)frame.buffer_ptr;
 
-        unsigned short value = 0;
 
         count = 1; // Offset of 1 because "o"
+        size_t ignore_pixels = 5;
         for(size_t y=0; y<frame.y_size; y++)
         {
+            count += ignore_pixels * 2;
             for(size_t x=0; x<frame.x_size; x++)
             {
                 //*ptr = value;
-                //*ptr = ((unsigned short)buff.base()[count] << 8) | buff.base()[count+1];
-                *ptr = buff.base()[count+1] + buff.base()[count];
+                *ptr = ((unsigned short)buff.base()[count] << 8) | buff.base()[count+1];
+                //*ptr = buff.base()[count+1] + buff.base()[count];
                 count+=2;
                 ptr++;
             }
-            value = value + 50;
-            count += (m_col_size - frame.x_size) * 2;
-            std::cout << "skipox3 " << (m_col_size - frame.x_size) * 2 << std::endl;
+            count += (m_col_size - frame.x_size) * 2 - ignore_pixels * 2;
         }
 
         if(m_config.invert_x)
@@ -485,7 +487,7 @@ void CommandTask::t_snap(const SnapInfo & frame)
             }
         }
 
-        std::cout << "CNT COUNT: " << count-1 << std::endl;
+        //std::cout << "CNT COUNT: " << count-1 << std::endl;
 
         if(m_listener) m_listener->on_buffer_filled();
 

@@ -33,7 +33,7 @@ void CommandTask::connect()
 
     yat::Message* msg = yat::Message::allocate(CONNECT_SOCKET,
         INIT_MSG_PRIORITY, true);
-    this->post(msg);
+    post(msg);
 }
 
 void CommandTask::init_sequence(const bool & force_config)
@@ -43,7 +43,7 @@ void CommandTask::init_sequence(const bool & force_config)
     yat::Message* msg = yat::Message::allocate(INIT_SEQUENCE,
         DEFAULT_MSG_PRIORITY, true);
     msg->attach_data(force_config);
-    this->post(msg);
+    post(msg);
 }
 
 void CommandTask::set_exp_time(const int & exp_time)
@@ -55,7 +55,7 @@ void CommandTask::set_exp_time(const int & exp_time)
     yat::Message* msg = yat::Message::allocate(SET_EXP_TIME,
         DEFAULT_MSG_PRIORITY, true);
     msg->attach_data(exp_time);
-    this->post(msg);
+    post(msg);
 
     m_cam_data.exp_time = exp_time;
 }
@@ -69,7 +69,7 @@ void CommandTask::set_gain(const int & gain)
     yat::Message* msg = yat::Message::allocate(SET_GAIN,
         DEFAULT_MSG_PRIORITY, true);
     msg->attach_data(gain);
-    this->post(msg);
+    post(msg);
 
     m_cam_data.gain = gain;
 }
@@ -83,7 +83,7 @@ void CommandTask::set_num_flushes(const int & num)
     yat::Message* msg = yat::Message::allocate(SET_FLUSHES,
         DEFAULT_MSG_PRIORITY, true);
     msg->attach_data(num);
-    this->post(msg);
+    post(msg);
 
     m_cam_data.num_flushes = num;
     // m_cam_data.modified = true;
@@ -113,7 +113,7 @@ void CommandTask::prepare(const FrameInfo & frame)
     yat::Message* msg = yat::Message::allocate(PREPARE,
         DEFAULT_MSG_PRIORITY, true);
     msg->attach_data(m_cam_data);
-    this->post(msg);
+    post(msg);
 
     m_cam_data.modified = false;
 }
@@ -129,7 +129,7 @@ void CommandTask::snap(void* buffer_ptr, const int & x_size, const int & y_size)
     info.x_size = x_size;
     info.y_size = y_size;
     msg->attach_data(info);
-    this->post(msg);
+    post(msg);
 }
 
 void CommandTask::get_temperature()
@@ -138,7 +138,7 @@ void CommandTask::get_temperature()
 
     yat::Message* msg = yat::Message::allocate(GET_TEMPERATURE,
         DEFAULT_MSG_PRIORITY, true);
-    this->post(msg);
+    post(msg);
 }
 
 void CommandTask::get_gain()
@@ -147,7 +147,7 @@ void CommandTask::get_gain()
 
     yat::Message* msg = yat::Message::allocate(GET_GAIN,
         DEFAULT_MSG_PRIORITY, true);
-    this->post(msg);
+    post(msg);
 }
 
 void CommandTask::re_config()
@@ -156,7 +156,7 @@ void CommandTask::re_config()
 
     yat::Message* msg = yat::Message::allocate(RE_CONFIG,
         DEFAULT_MSG_PRIORITY, true);
-    this->post(msg);
+    post(msg);
 }
 
 CommandTask::State CommandTask::get_state()

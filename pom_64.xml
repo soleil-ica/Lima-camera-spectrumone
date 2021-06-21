@@ -8,12 +8,19 @@
     </parent>
 
     <groupId>fr.soleil.lib.Lima.Camera</groupId>
-    <artifactId>LimaSpectrumOne-${aol}-shared-${mode}</artifactId>
+    <artifactId>LimaSpectrumOne-amd64-Linux-gcc-shared-${mode}</artifactId>
     <version>1.1</version>
     
     <packaging>nar</packaging>
     <name>LimaSpectrumOne</name>
     <description>This module controls the SpectrumOne Camera</description>
+
+    <properties>
+		<!-- path to the 64 bits libs ${libs-64bits} -->
+        <libs-64bits>/home/informatique/ica/ica/LIB_EL6_64</libs-64bits>
+
+        <YAT.version>1.18.2</YAT.version>
+	</properties>
     
     <scm>
         <connection>scm:git:git://github.com/soleil-ica/Lima-camera-spectrumoneccd.git</connection>
@@ -24,12 +31,8 @@
     <dependencies>
         <dependency>
             <groupId>fr.soleil.lib</groupId>
-            <artifactId>LimaCore-${aol}-shared-${mode}</artifactId>
+            <artifactId>LimaCore-amd64-Linux-gcc-shared-${mode}</artifactId>
             <version>1.7.9</version>
-        </dependency>
-        <dependency>
-            <groupId>fr.soleil.lib</groupId>
-            <artifactId>YAT-${aol}-${library}-${mode}</artifactId>
         </dependency>
     </dependencies>
 
@@ -45,6 +48,7 @@
                         <includePaths>
                             <includePath>include</includePath>
                             <includePath>lib/SpectrumComms/include</includePath>
+                            <includePath>${libs-64bits}/yat-${YAT.version}/include</includePath>
                         </includePaths>
                         <!-- define less verbose mode for gcc-->
                         <defines>
@@ -56,6 +60,16 @@
                             <option>-w</option>
                         </options>
                     </cpp>
+                    <linker>
+					<libs>
+                        <lib>
+                            <!-- YAT 64 -->
+                            <name>YAT-amd64-Linux-gcc-shared-release-${YAT.version}</name>
+                            <type>shared</type>
+                            <directory>${libs-64bits}/yat-${YAT.version}/lib</directory>
+                        </lib>
+					</libs>
+				   </linker>
                     <libraries>
                         <library>
                             <type>shared</type>
