@@ -67,8 +67,13 @@ void GpibComms::connect()
         yat::Socket::init();
         m_sock.reset(new yat::ClientSocket(yat::Socket::TCP_PROTOCOL)); // AF_INET, SOCK_STREAM
 
+<<<<<<< HEAD
         m_sock->set_option(yat::Socket::SOCK_OPT_IBUFFER_SIZE, DATA_SIZE);
         m_sock->set_option(yat::Socket::SOCK_OPT_OBUFFER_SIZE, DATA_SIZE);
+=======
+        // m_sock->set_option(yat::Socket::SOCK_OPT_IBUFFER_SIZE, DATA_SIZE);
+        // m_sock->set_option(yat::Socket::SOCK_OPT_OBUFFER_SIZE, DATA_SIZE);
+>>>>>>> b541c789e3dd8724fa83455f303e6f1f7eada4b8
         m_sock->set_option(yat::Socket::SOCK_OPT_NO_DELAY, 1); // IPPROTO_TCP
         m_sock->set_option(yat::Socket::SOCK_OPT_OTIMEOUT, 10000);
         m_sock->set_option(yat::Socket::SOCK_OPT_ITIMEOUT, 10000);
@@ -101,8 +106,13 @@ void GpibComms::gpib_init()
         std::vector<std::string> params;
 
         params.push_back("++mode 1\n");
+<<<<<<< HEAD
         params.push_back("++eot_enable 0\n");
         // params.push_back("++eot_char 13\n");
+=======
+        //params.push_back("++eot_enable 0\n");
+        //params.push_back("++eot_char 13\n");
+>>>>>>> b541c789e3dd8724fa83455f303e6f1f7eada4b8
         params.push_back("++auto 0\n");
         params.push_back("++eos 3\n");
         params.push_back("++eoi 1\n");
