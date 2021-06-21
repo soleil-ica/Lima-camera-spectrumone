@@ -154,11 +154,7 @@ void CommandTask::get_config(const std::string & config_str, std::vector<std::st
         args.push_back(cfg_file.get_param_value("max_gain", true));
         args.push_back(cfg_file.get_param_value("h_pixel_spacing", true));
         args.push_back(cfg_file.get_param_value("v_pixel_spacing", true));
-<<<<<<< HEAD
         args.push_back(cfg_file.get_param_value("total_parallel_pixels", true));
-=======
-        args.push_back(cfg_file.get_param_value("total_parallel_pixe", true));
->>>>>>> b541c789e3dd8724fa83455f303e6f1f7eada4b8
         args.push_back(cfg_file.get_param_value("total_serial_pixels", true));
     }
     catch(const yat::Exception & ex)

@@ -405,7 +405,6 @@ void CommandTask::t_snap(const SnapInfo & frame)
         while(true){
             try{ 
                 m_interface.m_comms.gpib_read_raw(force);
-<<<<<<< HEAD
                 unsigned char* data = reinterpret_cast<unsigned char*>(m_interface.m_comms.getBuffer().base());
                 buff.memcpy(data, m_interface.m_comms.getBuffer().length(), count);
                 count += m_interface.m_comms.getBuffer().length();
@@ -415,14 +414,6 @@ void CommandTask::t_snap(const SnapInfo & frame)
                         m_interface.report_info("Acquisition over, loading data... (" + TO_STRING(count) + " bytes loaded) (expected: " + TO_STRING(expected_size) +")");
                         YAT_INFO << "Buffer size received: " << m_interface.m_comms.getBuffer().length() << ", total: " << buff.size() << std::endl;
                     }, 5);
-=======
-                unsigned char* dta = reinterpret_cast<unsigned char*>(m_interface.m_comms.getBuffer().base());
-                buff.memcpy(dta, m_interface.m_comms.getBuffer().length(), count);
-                count += m_interface.m_comms.getBuffer().length();
-
-                //report_info("Acquisition over, loading data... (" + TO_STRING(count) + " bytes loaded)");
-
->>>>>>> b541c789e3dd8724fa83455f303e6f1f7eada4b8
                 if(force) force = false;
                 //YAT_ERROR << "size received =" << count << std::endl;
 
@@ -437,17 +428,12 @@ void CommandTask::t_snap(const SnapInfo & frame)
                 {
                     THROW_EXCEPTION(
                         "FAILED",
-<<<<<<< HEAD
                         "Didn't receive expected snap data after 3 retries!",
-=======
-                        "Didn't receive expected snap data after 5 retries!",
->>>>>>> b541c789e3dd8724fa83455f303e6f1f7eada4b8
                         "CommandTask::SNAP");
                 }
             }
         }
 
-<<<<<<< HEAD
         // yat::File data_file("/home/informatique/ica/ica/ah/output.dat");
         // std::string giga;
 
@@ -463,29 +449,11 @@ void CommandTask::t_snap(const SnapInfo & frame)
 
 
         // YAT_ERROR << "Snap ok buff size =" << buff.length() << std::endl;
-=======
-        yat::File data_file("/home/informatique/ica/ica/ah/output.dat");
-        std::string giga;
-
-        for(size_t r=0; r<buff.size(); r++)
-        {
-            Utils::char_to_hex_digits(buff.base()[r], giga);
-            giga.push_back(' ');
-            if(!(r%16)) giga.push_back('\n');
-        }
-
-        data_file.save(giga);
-
-
-
-        YAT_ERROR << "Snap ok buff size =" << buff.length() << std::endl;
->>>>>>> b541c789e3dd8724fa83455f303e6f1f7eada4b8
 
         m_interface.report_info("Data loaded!");
 
         unsigned short *ptr =  (unsigned short *)frame.buffer_ptr;
 
-<<<<<<< HEAD
 
         count = 1; // Offset of 1 because "o"
         size_t ignore_pixels = 5;
@@ -501,24 +469,6 @@ void CommandTask::t_snap(const SnapInfo & frame)
                 ptr++;
             }
             count += (m_col_size - frame.x_size) * 2 - ignore_pixels * 2;
-=======
-        unsigned short value = 0;
-
-        count = 1; // Offset of 1 because "o"
-        for(size_t y=0; y<frame.y_size; y++)
-        {
-            for(size_t x=0; x<frame.x_size; x++)
-            {
-                //*ptr = value;
-                //*ptr = ((unsigned short)buff.base()[count] << 8) | buff.base()[count+1];
-                *ptr = buff.base()[count+1] + buff.base()[count];
-                count+=2;
-                ptr++;
-            }
-            value = value + 50;
-            count += (m_col_size - frame.x_size) * 2;
-            std::cout << "skipox3 " << (m_col_size - frame.x_size) * 2 << std::endl;
->>>>>>> b541c789e3dd8724fa83455f303e6f1f7eada4b8
         }
 
         if(m_config.invert_x)
@@ -537,11 +487,7 @@ void CommandTask::t_snap(const SnapInfo & frame)
             }
         }
 
-<<<<<<< HEAD
         //std::cout << "CNT COUNT: " << count-1 << std::endl;
-=======
-        std::cout << "CNT COUNT: " << count-1 << std::endl;
->>>>>>> b541c789e3dd8724fa83455f303e6f1f7eada4b8
 
         if(m_listener) m_listener->on_buffer_filled();
 

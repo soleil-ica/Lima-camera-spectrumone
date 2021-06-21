@@ -9,11 +9,7 @@
 
     <groupId>fr.soleil.lib.Lima.Camera</groupId>
     <artifactId>LimaSpectrumOne-${aol}-shared-${mode}</artifactId>
-<<<<<<< HEAD
     <version>1.1</version>
-=======
-    <version>1.0.0</version>
->>>>>>> b541c789e3dd8724fa83455f303e6f1f7eada4b8
     
     <packaging>nar</packaging>
     <name>LimaSpectrumOne</name>
@@ -29,11 +25,7 @@
         <dependency>
             <groupId>fr.soleil.lib</groupId>
             <artifactId>LimaCore-${aol}-shared-${mode}</artifactId>
-<<<<<<< HEAD
-            <version>1.7.9</version>
-=======
             <version>1.7.10</version>
->>>>>>> b541c789e3dd8724fa83455f303e6f1f7eada4b8
         </dependency>
         <dependency>
             <groupId>fr.soleil.lib</groupId>
