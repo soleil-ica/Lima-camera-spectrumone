@@ -1,3 +1,25 @@
+//###########################################################################
+// This file is part of LImA, a Library for Image Acquisition
+//
+// Copyright (C) : 2009-2021
+// European Synchrotron Radiation Facility
+// BP 220, Grenoble 38043
+// FRANCE
+//
+// This is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation; either version 3 of the License, or
+// (at your option) any later version.
+//
+// This software is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, see <http://www.gnu.org/licenses/>.
+//###########################################################################
+
 #ifndef COMMANDTASK_H
 #define COMMANDTASK_H
 
@@ -24,6 +46,7 @@
 #define PREPARE         (yat::FIRST_USER_MSG + 109)
 #define SET_FLUSHES     (yat::FIRST_USER_MSG + 110)
 #define GET_GAIN        (yat::FIRST_USER_MSG + 111)
+#define SET_SHUTTER     (yat::FIRST_USER_MSG + 112)
 
 namespace SpectrumComms
 {
@@ -49,6 +72,7 @@ public:
         int num_flushes;
         int gain;
         int exp_time;
+        bool shutter;
     };
 
     struct FrameInfo
@@ -90,6 +114,7 @@ public:
     void get_temperature();
     void get_gain();
     void re_config();
+    void set_shutter(const bool & shutter);
 
 
     State get_state();
@@ -131,6 +156,7 @@ private:
     void t_get_temperature();
     void t_get_gain();
     void t_re_config();
+    void t_set_shutter(const bool & shutter);
 
     // State
     void set_state(State state)

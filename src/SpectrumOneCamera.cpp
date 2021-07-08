@@ -1,3 +1,25 @@
+//###########################################################################
+// This file is part of LImA, a Library for Image Acquisition
+//
+// Copyright (C) : 2009-2021
+// European Synchrotron Radiation Facility
+// BP 220, Grenoble 38043
+// FRANCE
+//
+// This is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation; either version 3 of the License, or
+// (at your option) any later version.
+//
+// This software is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, see <http://www.gnu.org/licenses/>.
+//###########################################################################
+
 #include "lima/Exceptions.h"
 
 #include "SpectrumOneCamera.h"
@@ -60,8 +82,8 @@ void Camera::on_buffer_filled()
 {
     StdBufferCbMgr& buffer_mgr = m_buffer_ctrl_obj.getBuffer();
     HwFrameInfoType frame_info;
-    frame_info.acq_frame_nb = 0;
-    m_frame_nb = 1;
+    frame_info.acq_frame_nb = m_frame_nb;
+    m_frame_nb++;
     buffer_mgr.newFrameReady(frame_info);
 }
 
@@ -75,7 +97,19 @@ void Camera::startAcq()
 {
     StdBufferCbMgr& buffer_mgr = m_buffer_ctrl_obj.getBuffer();
     buffer_mgr.setStartTimestamp(Timestamp::now());
-    m_command->snap(buffer_mgr.getFrameBufferPtr(0), m_frame_info.x_size, m_frame_info.y_size);
+    int nb_buffers;
+    buffer_mgr.getNbBuffers(nb_buffers);
+    //m_command->snap(buffer_mgr.getFrameBufferPtr(0), m_frame_info.x_size, m_frame_info.y_size);
+    for(int i=0; i<nb_buffers; i++)
+    {
+        std::cout << "snapping " << i << std::endl;
+        m_command->snap(buffer_mgr.getFrameBufferPtr(i), m_frame_info.x_size, m_frame_info.y_size);
+    }
+}
+
+void Camera::stopAcq()
+{
+    m_command->clear_pending_messages();
 }
 
 void Camera::setFrameDim(const FrameDim& frame_dim)
@@ -210,3 +244,9 @@ void Camera::setBin(const Bin & set_bin)
     m_frame_info.x_bin = set_bin.getX();
     m_frame_info.y_bin = set_bin.getY();
 }
+
+void Camera::setShutter(const bool & shutter)
+{
+    m_command->set_shutter(shutter);
+}
+

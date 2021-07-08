@@ -1,3 +1,25 @@
+//###########################################################################
+// This file is part of LImA, a Library for Image Acquisition
+//
+// Copyright (C) : 2009-2021
+// European Synchrotron Radiation Facility
+// BP 220, Grenoble 38043
+// FRANCE
+//
+// This is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation; either version 3 of the License, or
+// (at your option) any later version.
+//
+// This software is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, see <http://www.gnu.org/licenses/>.
+//###########################################################################
+
 #include "CommandTask.h"
 
 using namespace SpectrumComms;
@@ -67,6 +89,11 @@ void CommandTask::handle_message(yat::Message& msg)
         case RE_CONFIG:
         YAT_INFO << "CommandTask::handle_message: RE_CONFIG" << std::endl;
         t_re_config();
+        break;
+
+        case SET_SHUTTER:
+        YAT_INFO << "CommandTask::handle_message: SET_SHUTTER" << std::endl;
+        t_set_shutter(msg.get_data<bool>());
         break;
 
         default:
@@ -578,6 +605,32 @@ void CommandTask::t_re_config()
     catch(const yat::Exception & ex)
     {
         m_interface.report_error("RE CONFIG: Failed to re configure CCD!\n");
+        m_interface.report_error(ex.to_string());
+        set_state(State::Fault);
+    }
+}
+
+void CommandTask::t_set_shutter(const bool & close_shutter)
+{
+    if(get_state() != State::Idle)
+    {
+        // m_interface.report_error("SET SHUTTER: Invalid state!\n");
+        return;
+    }
+    set_state(State::Config);
+
+    std::vector<std::string> args(1, "0");
+
+    if (!close_shutter) args[0] = "1";
+
+    try
+    {
+        m_interface.command_and_read(CCD_SET_SHUTTER, &args, true);
+        set_state(State::Idle);
+    }
+    catch(const yat::Exception & ex)
+    {
+        m_interface.report_error("SET GAIN: Failed to write exposition time!\n");
         m_interface.report_error(ex.to_string());
         set_state(State::Fault);
     }

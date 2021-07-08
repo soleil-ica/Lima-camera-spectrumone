@@ -20,29 +20,18 @@
 // along with this program; if not, see <http://www.gnu.org/licenses/>.
 //###########################################################################
 
-#ifndef SPECTRUMONEEVENTCTRLOBJ_H
-#define SPECTRUMONEEVENTCTRLOBJ_H
+#include "SpectrumOneShutterCtrlObj.h"
+#include "SpectrumOneCamera.h"
 
-#include <lima/HwEventCtrlObj.h>
-#include "CommandTask.h"
+using namespace lima;
+using namespace lima::SpectrumOne;
 
-namespace lima
+ShutterCtrlObj::ShutterCtrlObj(Camera *cam):
+    m_cam(cam)
 {
-  namespace SpectrumOne
-  {
+}
 
-    typedef SpectrumComms::EventType EventType;
+ShutterCtrlObj::~ShutterCtrlObj()
+{
+}
 
-    class EventCtrlObj : public HwEventCtrlObj
-    {
-    public:
-    EventCtrlObj() {};
-    virtual ~EventCtrlObj() {};
-    void reportCameraEvent(const std::string & str, SpectrumComms::EventType evt);
-    Event::Severity getSeverity(EventType type);
-
-    };
-  } // namespace SpectrumOne
-} // namespace lima
-
-#endif // SPECTRUMONEEVENTCTRLOBJ_H

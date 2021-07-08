@@ -20,10 +20,10 @@
 // along with this program; if not, see <http://www.gnu.org/licenses/>.
 //###########################################################################
 
-#ifndef SPECTRUMONEDETINFOCTRLOBJ_H
-#define SPECTRUMONEDETINFOCTRLOBJ_H
+#ifndef SPECTRUMONESHUTTERCTRLOBJ_H
+#define SPECTRUMONESHUTTERCTRLOBJ_H
 
-#include <lima/HwDetInfoCtrlObj.h>
+#include <lima/HwShutterCtrlObj.h>
 #include <lima/Debug.h>
 
 
@@ -32,33 +32,33 @@ namespace lima
   namespace SpectrumOne
   {
     class Camera;
-    class DetInfoCtrlObj : public HwDetInfoCtrlObj
+    class ShutterCtrlObj : public HwShutterCtrlObj
     {
-      DEB_CLASS_NAMESPC(DebModCamera, "DetInfoCtrlObj","SpectrumOne");
+      DEB_CLASS_NAMESPC(DebModCamera, "ShutterCtrlObj","SpectrumOne");
 
     public:
-        DetInfoCtrlObj(Camera*);
-        virtual ~DetInfoCtrlObj();
+        ShutterCtrlObj(Camera*);
+        virtual ~ShutterCtrlObj();
 
-        virtual void getMaxImageSize(Size& max_image_size);
-        virtual void getDetectorImageSize(Size& det_image_size);
+        // virtual bool checkMode(ShutterMode shut_mode) const;
+        // virtual void getModeList(ShutterModeList&  mode_list) const;
+        // virtual void setMode(ShutterMode  shut_mode);
+        // virtual void getMode(ShutterMode& shut_mode) const;
 
-        virtual void getDefImageType(ImageType& def_image_type);
-        virtual void getCurrImageType(ImageType& curr_image_type);
-        virtual void setCurrImageType(ImageType  curr_image_type);
+        // virtual void setState(bool  shut_open);
+        // virtual void getState(bool& shut_open) const;
 
-        virtual void getPixelSize(double& x_size,double &y_size);
-        virtual void getDetectorType(std::string& det_type);
-        virtual void getDetectorModel(std::string& det_model);
+        // virtual void setOpenTime (double  shut_open_time);
+        // virtual void getOpenTime (double& shut_open_time) const;
+        // virtual void setCloseTime(double  shut_close_time);
+        // virtual void getCloseTime(double& shut_close_time) const;
 
-        virtual void registerMaxImageSizeCallback(HwMaxImageSizeCallback& cb);
-        virtual void unregisterMaxImageSizeCallback(HwMaxImageSizeCallback& cb);
     private:
         Camera* m_cam;
     };
 
-  } // namespace Prosilica
+  } // namespace SpectrumOne
 } // namespace lima
 
 
-#endif // SPECTRUMONEDETINFOCTRLOBJ_H
+#endif // SPECTRUMONESHUTTERCTRLOBJ_H

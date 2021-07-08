@@ -1,3 +1,25 @@
+//###########################################################################
+// This file is part of LImA, a Library for Image Acquisition
+//
+// Copyright (C) : 2009-2021
+// European Synchrotron Radiation Facility
+// BP 220, Grenoble 38043
+// FRANCE
+//
+// This is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation; either version 3 of the License, or
+// (at your option) any later version.
+//
+// This software is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, see <http://www.gnu.org/licenses/>.
+//###########################################################################
+
 #include "CommandTask.h"
 
 using namespace SpectrumComms;
@@ -11,7 +33,7 @@ CommandTask::CommandTask(GpibComms::GpibConfig gpib_config, CommandConfig comman
 {
     YAT_TRACE("CommandTask::CommandTask");
 
-    m_cam_data.modified = false;
+    m_cam_data.modified = true;
     m_cam_data.x_origin = 0;
     m_cam_data.y_origin = 0;
     m_cam_data.x_size = 2000;
@@ -21,7 +43,6 @@ CommandTask::CommandTask(GpibComms::GpibConfig gpib_config, CommandConfig comman
     m_cam_data.num_flushes = 2;
     m_cam_data.gain = 0;
     m_cam_data.exp_time = 1000;
-    m_cam_data.modified = true;
 
     // launch task:
     go_asynchronously();
@@ -86,7 +107,6 @@ void CommandTask::set_num_flushes(const int & num)
     post(msg);
 
     m_cam_data.num_flushes = num;
-    // m_cam_data.modified = true;
 }
 
 void CommandTask::prepare(const FrameInfo & frame)
@@ -157,6 +177,20 @@ void CommandTask::re_config()
     yat::Message* msg = yat::Message::allocate(RE_CONFIG,
         DEFAULT_MSG_PRIORITY, true);
     post(msg);
+}
+
+void CommandTask::set_shutter(const bool & shutter)
+{
+    YAT_TRACE("CommandTask::set_shutter");
+
+    if(shutter == m_cam_data.shutter) return;
+
+    yat::Message* msg = yat::Message::allocate(SET_SHUTTER,
+        DEFAULT_MSG_PRIORITY, true);
+    msg->attach_data(shutter);
+    post(msg);
+
+    m_cam_data.shutter = shutter;
 }
 
 CommandTask::State CommandTask::get_state()
