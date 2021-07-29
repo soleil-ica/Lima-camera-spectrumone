@@ -29,7 +29,7 @@ namespace lima
     typedef SpectrumComms::CommandTask::FrameInfo FrameInfo;
     typedef HwInterface::StatusType::Basic BasicStatus;
 
-    class Camera : public HwMaxImageSizeCallbackGen, public SpectrumComms::Listener
+    class DLL_EXPORT Camera : public HwMaxImageSizeCallbackGen, public SpectrumComms::Listener
     {
     public:
         Camera(GpibConfig gpib_config, CommandConfig command_config);

@@ -14,7 +14,7 @@ namespace lima
     class RoiCtrlObj;
     class BinCtrlObj;
 
-    class Interface : public HwInterface
+    class DLL_EXPORT Interface : public HwInterface
     {
     private:
         DetInfoCtrlObj*     m_det_info;
