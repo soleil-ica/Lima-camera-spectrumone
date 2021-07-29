@@ -14,6 +14,8 @@
 
 #include "Common.h"
 
+#include "GpibInterface.h"
+
 #define DATA_SIZE 2048
 #define ASK_EOI_STR "++read eoi\n"
 #define ASK_ACK_STR "++read 111\n"

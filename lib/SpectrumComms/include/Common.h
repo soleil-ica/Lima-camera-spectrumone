@@ -21,6 +21,9 @@ yat::StringUtil::is_equal_no_case(a, b)
 #define TO_STRING(arg)  \
 yat::StringUtil::to_string(arg)
 
+#define DLLIMPORT   __declspec( dllimport )
+#define DLLEXPORT   __declspec( dllexport )
+
 namespace SpectrumComms
 {
 
