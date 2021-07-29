@@ -16,12 +16,12 @@ class GpibInterfaceException {
     public:
     
     GpibInterfaceException(std::string device_name, std::string origin, std::string err_msg, std::string sta_msg, int err, int sta);
-    std::string getMessage();
-    std::string getiberrMessage();
-    std::string getibstaMessage();
-    std::string getDeviceName();
-    int getErrorValue();
-    int getStateValue();
+    std::string getMessage() const;
+    std::string getiberrMessage() const;
+    std::string getibstaMessage() const;
+    std::string getDeviceName() const;
+    int getErrorValue() const;
+    int getStateValue() const;
     protected:
     
     private:

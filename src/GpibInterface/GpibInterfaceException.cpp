@@ -1,4 +1,4 @@
-#include "GpibInterfaceException.h"
+#include "GpibInterface/GpibInterfaceException.h"
 
 using namespace GpibInterfaceLib;
 
@@ -20,7 +20,7 @@ GpibInterfaceException::GpibInterfaceException(std::string device_name,std::stri
 /**
  * Get GpibInterface Class message / origin.
  */ 
-std::string GpibInterfaceException::getMessage()
+std::string GpibInterfaceException::getMessage() const
 {
     return message;
 }
@@ -29,7 +29,7 @@ std::string GpibInterfaceException::getMessage()
 /**
  * Get gpib library low level error message.
  */ 
-std::string GpibInterfaceException::getiberrMessage()
+std::string GpibInterfaceException::getiberrMessage() const
 {
     return iberrMessage;
 }
@@ -37,7 +37,7 @@ std::string GpibInterfaceException::getiberrMessage()
 /**
  * Get gpib ibsta in string form.
  */ 
-std::string GpibInterfaceException::getibstaMessage()
+std::string GpibInterfaceException::getibstaMessage() const
 {
     return ibstaMessage;
 }
@@ -45,7 +45,7 @@ std::string GpibInterfaceException::getibstaMessage()
 /**
  * Get device name on which exception occurs.
  */ 
-std::string GpibInterfaceException::getDeviceName()
+std::string GpibInterfaceException::getDeviceName() const
 {
     return dname;
 }
@@ -53,7 +53,7 @@ std::string GpibInterfaceException::getDeviceName()
 /**
  * Get iberr value from the device on which error occurs.
  */ 
-int GpibInterfaceException::getErrorValue()
+int GpibInterfaceException::getErrorValue() const
 {
     return ib_err;
 }
@@ -61,7 +61,7 @@ int GpibInterfaceException::getErrorValue()
 /**
  * Get ibsta value from the device on which error occurs.
  */ 
-int GpibInterfaceException::getStateValue()
+int GpibInterfaceException::getStateValue() const
 {
     return ib_sta;
 }

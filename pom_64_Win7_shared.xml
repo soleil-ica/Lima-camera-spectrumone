@@ -49,12 +49,8 @@
                 <configuration>
                     <cpp>
                         <sourceDirectory>src</sourceDirectory>
-                        <sourceDirectory>lib/GpibInterface/src</sourceDirectory>
-                        <sourceDirectory>lib/SpectrumComms/src</sourceDirectory>
                         <includePaths>
                             <includePath>include</includePath>
-                            <includePath>lib/GpibInterface/include</includePath>
-                            <includePath>lib/SpectrumComms/include</includePath>
                             <includePath>${ni4882-include}</includePath>
                             <includePath>${yat-include}</includePath>
                         </includePaths>

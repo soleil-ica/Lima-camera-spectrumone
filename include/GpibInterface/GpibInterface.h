@@ -3,7 +3,7 @@
 
 #include <string>
 #include <vector>
-#include "GpibInterfaceException.h"
+#include "GpibInterface/GpibInterfaceException.h"
 
 /**
 * Device's default size buffer for read operations.

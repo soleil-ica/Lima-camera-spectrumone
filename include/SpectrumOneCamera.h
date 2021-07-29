@@ -7,8 +7,8 @@
 #include <lima/Event.h>
 #include <lima/HwInterface.h>
 
-#include "GpibComms.h"
-#include "CommandTask.h"
+#include "SpectrumComms/GpibComms.h"
+#include "SpectrumComms/CommandTask.h"
 #include "SpectrumOneEventCtrlObj.h"
 
 #include <yat/memory/UniquePtr.h>

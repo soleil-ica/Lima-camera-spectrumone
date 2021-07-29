@@ -2,7 +2,7 @@
 #define SPECTRUMONEEVENTCTRLOBJ_H
 
 #include <lima/HwEventCtrlObj.h>
-#include "CommandTask.h"
+#include "SpectrumComms/CommandTask.h"
 
 namespace lima
 {
