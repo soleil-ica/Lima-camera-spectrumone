@@ -1,50 +1,92 @@
-#ifndef GPIBPROLOGIX_H
-#define GPIBPROLOGIX_H
+#ifndef GPIBINTERFACE_H
+#define GPIBINTERFACE_H
 
-
-
-#include <yat/network/ClientSocket.h>
-#include <yat/memory/UniquePtr.h>
+#include <string>
+#include <vector>
+#include <yat/Exception.h>
 #include <yat/memory/DataBuffer.h>
+#include <yat/threading/Thread.h>
 
-#include <yat/utils/String.h>
-#include <yat/utils/Logging.h>
+/**
+* Device's default size buffer for read operations.
+*/
+#define RD_BUFFER_SIZE         128
 
-#include <iomanip>
+/**
+* Drivers are by default limited to 8 gpibBoard per driver.
+*/
+#define MAX_BOARD_INDEX        7
 
-#include "SpectrumComms/Common.h"
+/**
+ * Maximum size of string received, when identifying devices connected on
+ * the bus.( string return by device in answer to "*IDN?"
+ */
+#define MAX_DEV_IDN_STR        128
 
-#include "GpibInterface/GpibInterface.h"
+/**
+ * Maximum number of device on the GPIB bus. 
+ * This is used to limit bus scan with getConnectedDeviceList method.
+ */
+#define MAX_DEV_ON_BOARD    30
 
 #define DATA_SIZE 2048
-#define ASK_EOI_STR "++read eoi\n"
-#define ASK_ACK_STR "++read 111\n"
-#define ASK_RAW_STR "++read\n"
-#define TIMEOUT 2000 // Default timeout
-
-#define RETHROW_GPIB_EXCEPTION(ex)                            \
-throw yat::Exception(ex.getMessage(), ex.getiberrMessage(),     \
-ex.getDeviceName(), ex.getErrorValue());
-
-#define RETHROW_SOCKET_EXCEPTION(ex)                            \
-throw yat::Exception(ex.errors[0].reason, ex.errors[0].desc +   \
-sock_status(ex.errors[0].code),                                 \
-ex.errors[0].origin, ex.errors[0].code);
-
 
 namespace SpectrumComms
 {
+/**
+ * This class is a container for Device Info.
+ * No methods are implemented, it only feature public fields. This class
+ * is mainly used with getConnectedDeviceList method.
+ */
+class GpibCommsInfo {
 
-// ============================================================================
-//! \class GpibComms
-//! \brief Gpib Communication through Prologix Ethernet Controller.
-// ============================================================================
-class GpibComms
-{
+public:
+   virtual ~GpibCommsInfo(){};
+  /**
+     * This string contains device's answer to "*IDN?"
+     */
+   std::string dev_idn;        
+
+  /**
+     * This int contains device's Primary ADdress.
+     */
+     int    dev_pad;        
+
+  /**
+     * This int contains device's Secondary ADdress.
+     */
+     int dev_sad;        
+};
+
+
+/**
+ * Static vector of GpibCommsInfo.
+ * This var is declared here to allow getConnectedDeviceList method to
+ * return reference on object. User can avoid his own vector<GpibCommsInfo>
+ * declaration.
+ */
+static std::vector<GpibCommsInfo> inf;
+
+
+/** 
+* This class is designed to handle GpibCommss. It's point of
+* view is very device oriented: For example, setting device in remote mode, is
+* done with 'goToRemoteMode' device's method. It totaly hides the fact that this
+* is done by sending a command to gpib board. Due to ESRF gpib bus usage, this
+* class is designed to work on a single CIC (Controler In Charge) bus. In simple
+* word this class can't handle multi board buses. The default CIC selected is
+* "gpib0".
+*
+* The usual way to include gpib feature into a Tango device server consists in
+* single or multiple instance of a GpibComms / gpibBoard.
+* Once simply use read / write functions to handle devices. Note that All 
+* operations made on GpibComms or gpibBoard can potentialy throw a 
+* GpibCommsException.<link ref ="code example" href "code-example.txt"> 
+*/
+class GpibComms {
 
 public:
 
-    //! \brief Config struct, to give to the constructor.
     struct GpibConfig
     {
         std::string host; // Gpib controler Host (Ip address or hostname)
@@ -52,80 +94,86 @@ public:
         size_t      gpib_address; // Adress of the device to reach on the Gpib Bus
     };
 
-    //! \brief Constructor
     GpibComms(GpibConfig config);
 
-    //! \brief Destructor
-    virtual ~GpibComms() {YAT_LOG("~GpibComms()");}
+  void connect();    // class constructor.
+  void disconnect() {} //noop
+  void init() {} // noop
 
-    //! \brief Disconnect the socket.
-    void disconnect();
 
-    //! \brief Connect the ethernet socket and initialize it.
-    void connect();
+  std::string    ibstaToString();                            // Get string from ibsta string.    
+  std::string    iberrToString();                            // Get string from iberr string.     
+  int        getiberr();                                        // Get device iberr value.        
+  int        getibsta();                                        // Get device ibsta value.        
+  unsigned int getibcnt();                            // Get device ibcnt value.        
+  int        getDeviceID();                                  // Get internal device ID.
+  int        getDeviceAddr();                              // Get device gpib address;
+ void write(const std::string & argin);                                  // Send a string to a gpib device.     
+  void read(std::string & result, int size = 0);        // Read a std::string from a gpib device.     
+  int read_raw(yat::Buffer<char>& buff, int size = 0);
+void write_and_read(const std::string& argin, std::string & result, int size = 0);                    // Perform a write/read operation in a row.
 
-    //! \brief Initialize the Gpib controller.
-    void gpib_init();
 
-    //! \brief Gpib write command.
-    //! \param argin String to write.
-    //! \param ask_talk If the controller should ask the Gpib device to talk afterwards.
-    //! \throw yat::Exception if the command fails
-    void gpib_write(const std::string & argin, bool ask_talk=true);
+  char*    receiveData(long count);                // Read binary data from a GPIB device
+  void    sendData(const char *, long count);                // Write binary data on a GPIB device
+  void      wait_events(int mask);
 
-    //! \brief Gpib read command.
-    //! \param[out] result String for the result.
-    //! \param ask_talk If the controller should ask the Gpib device to talk before reading.
-    //! \throw yat::Exception if the command fails, or nothing to read.
-    void gpib_read(std::string & result, bool ask_talk=false);
-
-    //! \brief Gpib blocking read command.
-    //! Wait for something to be read for timeout.
-    //! \param[out] result String for the result.
-    //! \param timeout Timeout to wait for (ms).
-    //! \param ask_talk If the controller should ask the Gpib device to talk before reading.
-    //! \throw yat::Exception if the command fails or timeout expire.
-    void gpib_blocking_read(std::string & result, size_t timeout,
-        bool ask_talk=false);
-
-    //! \brief Gpib flush command. Try to read, if nothing to be read, ignores.
-    //! \param[out] result String for the result.
-    //! \param ask_talk If the controller should ask the Gpib device to talk before reading.
-    void gpib_flush(std::string & result, bool ask_talk=false);
-
-    //! \brief Gpib read raw. Use this to read raw data, stores the data in the internal buffer.
-    //! \param ask_talk If the controller should ask the Gpib device to talk before reading.
-    //! \throw yat::Exception if the command fails or nothing to read.
-    bool gpib_read_raw(bool ask_talk=false);
-
-    //! \brief Change the read request string.
-    void make_ack(bool bl);
-
-    //! \brief Returns the internal buffer object.
-    yat::Buffer<char>& getBuffer() {return m_buffer;}
+  void    setTimeOut(int tmo);                        // Set Device Time out.
+  bool    isAlive();                                        // Check the presence of the device on the bus.
+  void    trigger();                                        // Trigger the device.        
+    void    clr(void);                                        // Clear specified device.    (Board command).
+    yat::Buffer<char>& getBuffer();
+  std::vector<GpibCommsInfo>& getConnectedDeviceList();    //- List of connected devices
 
 private:
+  void    saveState();                                    // save iberr/ibstat in dev_ibsta/dev_iberr. 
+  void    resetState();                                    // reset iberr/ibstat in dev_ibsta/dev_iberr.
 
-    bool m_is_initialized;
-    std::string ask_str;
-    GpibConfig m_config;
-    yat::UniquePtr<yat::ClientSocket> m_sock;
-    yat::Buffer<char> m_buffer;
+  void delay(int t);
+  /** 
+  * Internal gpib handler.
+  */
+  int device_ID;        
 
-    yat::UniquePtr<GpibInterfaceLib::GpibInterface> m_gpib_interface;
+  /**
+  * gpib PAD return by driver at ibask(device_ID,IbaPAD,...).
+  */
+  int devAddr;        
 
-    bool wait_data(size_t timeout, bool throw_exception);
-    bool is_to_read();
+  /**
+  * Internal gpib ibsta copy.
+  */
+  int dev_ibsta;            
 
-    void read();
-    void write(const std::string & dta);
+  /**
+  * Internal gpib iberr copy.
+  */
+  int dev_iberr;            
 
-    static std::string sock_status(int val);
-    static std::string escape_chars(const std::string& input);
+  /**
+  * Internal gpib ibcnt copy.
+  */
+  unsigned int dev_ibcnt;            
 
-    
-};  // Class
+  /**
+  * gpib device name passed in constructor, or built on address e.g dev4
+  */
+  std::string device_name;         
 
-}   // namespace SpectrumComms
+  /**
+  * Status Byte value, polled by ReadStatusByte funct.
+  */
+  short alive;
 
-#endif  // GPIBPROLOGIX_H
+  /**
+  * This is the gpib board, where our device is connected to.
+  */
+  int gpib_board;    
+
+  GpibConfig m_config;
+  bool m_is_initialized;
+
+  yat::Buffer<char> m_buffer;
+};
+}
+#endif

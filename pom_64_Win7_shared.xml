@@ -17,10 +17,11 @@
 
     <properties>
         <YAT.version>1.18.2</YAT.version> 
+        <ni4882.version>17.6</ni4882.version> 
         <libs-64bits>C:\VC_12_MAVEN\LIB_VC12_64</libs-64bits>
 
-        <ni4882-lib>${libs-64bits}\ni4882\lib64\msvc\</ni4882-lib>
-        <ni4882-include>${libs-64bits}\ni4882\include\</ni4882-include>
+        <ni4882-lib>${libs-64bits}\ni4882-${ni4882.version}\lib64\msvc\</ni4882-lib>
+        <ni4882-include>${libs-64bits}\ni4882-${ni4882.version}\include\</ni4882-include>
         <yat-lib>${libs-64bits}\YAT-${YAT.version}\target\nar\lib\amd64-Windows-msvc\shared\</yat-lib>
         <yat-include>${libs-64bits}\YAT-${YAT.version}\target\nar\include\</yat-include>
     </properties>

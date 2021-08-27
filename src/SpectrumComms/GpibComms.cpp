@@ -1,397 +1,553 @@
+#include <iostream>
+#include <sstream>
+#include <string>
 #include "SpectrumComms/GpibComms.h"
-#include "GpibInterface/GpibInterface.h"
+
+
+#include <windows.h>
+#include "ni4882.h"    
+
+#define EOTMODE               1     // Enable the END message
+#define EOSMODE               0     // Disable the EOS mode
 
 using namespace SpectrumComms;
+
+/**
+ * Standard GPIB errors strings.
+ */
+const std::string error_array[] = {
+    "EDVR - A system call has failed. ibcnt/ibcntl will be set to the value of errno.",
+    "ECIC - Your interface board needs to be controller-in-charge, but is not.",
+    "ENOL - You have attempted to write data or command bytes, but there are no listeners currently addressed.",
+    "EADR - The interface board has failed to address itself properly before starting an io operation.",
+    "EARG - IOne or more arguments to the function call were invalid.",
+    "ESAC - The interface board needs to be system controller, but is not.",
+    "EABO - A read or write of data bytes has been aborted, possibly due to a timeout or reception of a device clear command.",
+    "ENEB - The GPIB interface board does not exist, its driver is not loaded, or it is not configured properly.",
+    "EDMA - DMA hardware problem",
+    "Idx9 - Not defined",
+    "EOIP - Function call can not proceed due to an asynchronous IO operation (ibrda(), ibwrta(), or ibcmda()) in progress.",
+      "ECAP - Incapable of executing function call, due the GPIB board lacking the capability, or the capability being disabled in software.",
+    "EFSO - File system error",
+    "Idx13 - Index error invalid : error not listed",
+    "EBUS - An attempt to write command bytes to the bus has timed out.",
+    "ESTB - One or more serial poll status bytes have been lost. This can occur due to too many status bytes accumulating (through automatic serial polling) without being read.",
+    "ESRQ - The serial poll request service line is stuck on. This can occur if a physical device on the bus requests service, but its GPIB address has not been opened (via ibdev() for example) by any process. Thus the automatic serial polling routines are unaware of the device's existence and will never serial poll it.",
+    "Idx17 - Index error invalid : error not listed",
+    "Idx18 - Index error invalid : error not listed",
+    "Idx19 - Index error invalid : error not listed",
+    "ETAB - The return buffer is full.",
+    "ELCK - Address or board is locked.",
+    "EARM - The ibnotify Callback failed to rearm.",
+    "EHDL - The input handle is invalid.",
+    "WCFG - Configuration warning",
+    "Idx25 - Index error invalid : error not listed",
+    "EWIP - Wait already in progress on input ud",
+    "ERST - The event notification was cancelled due to a reset of the interface",
+    "EPWR - The system or board has lost power or gone to standby",
+};
+
+
+/**
+ * This is the second constructor for the GpibComms class.
+ * The parameter passed to this constructor, is the device address 
+ * configured on your device hardware. 
+ * Warning: using this constructor assumes that the device name defined in
+ * the gpib driver is the original one. Default gpib device name are
+ * composed like this:  dev + address ->  hardware at address 4 will use
+ * dev4 as defaultname. If you have change this name with ibconf, you will
+ * have to use the previous constructor.
+ * VERY IMPORTANT NOTES:
+ * If method doesn't throw exception this not necessarly mean that the gpib
+ * device exists. This mean that the name devX exists in the gpib driver !
+ * This constructor assumes your gpib device to be on board 0 !
+ * This constructor SHOULD NOT BE USE ANYMORE since it simply concat dev to
+ * the address, to build the device name (store in driver). Instead of doing
+ * GpibComms( 4 ) use GpibComms ("dev4") or, for THE BEST SOLUTION:
+ * GpibComms( "dev4", "gpib0").
+ *
+ */
 
 GpibComms::GpibComms(GpibConfig config):
     m_config(config),
     m_is_initialized(false)
 {
-    ask_str = ASK_EOI_STR;
 }
 
-void GpibComms::disconnect()
+void GpibComms::delay(int t) // les valeurs transmises doivent �tre compatibles avec ibtmo()
 {
-    YAT_TRACE("GpibComms::disconnect");
-    try
-    {
-        m_is_initialized = false;
-        if(m_sock && m_sock->connection_status() ==  yat::ClientSocket::CONNECTED_YES)
-        {
-            m_sock->disconnect();
-            YAT_INFO << "GpibComms: Socket disconnected!" << std::endl;
-        }
-        else
-        {
-            YAT_INFO << "GpibComms: Socket already disconnected!" << std::endl;
-        }
-        yat::Socket::terminate();
-    }
-    catch(const yat::SocketException & se)
-    {
-        RETHROW_SOCKET_EXCEPTION(se);
-    }
-    catch(...)
-    {
-        THROW_EXCEPTION(
-            "UNKNOWN ERROR!",
-            "Unknown error during socket disconnection!",
-            "GpibComms::disconnect");
-    }
+    int OldTmo;
+    int i;
+    ibask(0,0x0003,&OldTmo);  //ibaTMO
+    ibtmo(0,t); 
+    do 
+    i=ibwait(0,TIMO);    
+    while ((i & 0x4000)==0);
+    ibtmo(0,OldTmo);
 }
 
-void GpibComms::make_ack(bool bl)
-{
-    if(bl)
-    {
-        write("++read_tmo_ms 100\n");
-        ask_str = ASK_RAW_STR;
-        //write(ASK_ACK_STR);
-    } 
-    else
-    {
-        write("++read_tmo_ms 3000\n");
-        ask_str = ASK_EOI_STR;
-    }
-}
 
-void GpibComms::connect()
+void GpibComms::connect() 
 {
-    YAT_TRACE("GpibComms::connect");
-
-    // OUT_OF_MEMORY Thrown if memory allocation fails.
+    m_is_initialized = false;
     m_buffer.capacity(DATA_SIZE);
+   std::string ss;
+   device_ID=-1;
+   
+    std::ostringstream os;
+    os << m_config.gpib_address;
 
-    try
-    {
-        m_is_initialized = false;
-        m_gpib_interface.reset(new GpibInterfaceLib::GpibInterface(m_config.gpib_address));
+    //- Get Device by name + addr.
+    device_name = "dev" + os.str();
+    devAddr = m_config.gpib_address;
 
-        m_is_initialized = true;
-    }
-    catch(const GpibInterfaceLib::GpibInterfaceException & exception)
+    //- Save board id.
+    std::string boardname {"gpib0"};
+    ss = boardname.substr(4);
+    gpib_board = atoi( ss.c_str() );
+    
+    if ((gpib_board < 0) || (gpib_board> MAX_BOARD_INDEX) )
     {
-        RETHROW_GPIB_EXCEPTION(exception);
+        throw yat::Exception("Error occured while getting device Addr", "Board index is out of range - Value must be between 0 and 7", device_name, iberr);
     }
-    catch(...)
+    /*
+     *  The Initialization portion consists of initializing the bus and the
+     *  GPIB interface board so that the GPIB board is Controller-In-Charge
+     *  (CIC).
+    */
+//    SendIFC(gpib_board);
+
+    //- by default EOT is true and EOS is false 
+    resetState();
+
+    device_ID = ibdev(gpib_board,  devAddr, NO_SAD, T10s , EOTMODE ,EOSMODE);
+    saveState();
+
+    if (dev_ibsta & ERR)
     {
-        THROW_EXCEPTION(
-            "UNKNOWN ERROR!",
-            "Unknown error during socket connection!",
-            "GpibComms::connect");
+        throw yat::Exception("Error occured while connecting to GPIB", iberrToString() + " - " + ibstaToString(), device_name, iberr);
     }
+
+    ibconfig(device_ID,IbcEOSrd,0);
+    // ibwait(device_ID,0x100);
+
+    // ibtmo(device_ID,T1s);
+    // ibdma(0,1); //enable la DMA
+    
+    
+    
+    // ibrd(device_ID, m_buffer.base(), DATA_SIZE); //flush buffer
+
+    unsigned char rst = 222;
+
+    //ibwrt(device_ID,&rst,1L);  // reboote si en attente d'une entr�e
+    //delay(T300ms);
+    // ibtmo(device_ID,T3s);
+
+
+
+
+    if ( device_ID == -1) 
+    {
+        throw yat::Exception("Error occured while connecting to GPIB", iberrToString() + " - " + ibstaToString(), device_name, iberr);
+    }
+
+    m_is_initialized = true;
+    //std::cout << "gpib_board=" << gpib_board<< ",device_ID=" << device_ID << ",devAddr=" << devAddr <<std::endl;
+
+};
+
+/**
+ * ibsta register string conversion.
+ * This method returns string describing ibsta register meaning.
+ */
+std::string GpibComms::ibstaToString() 
+{
+    std::string ret;
+    
+   if (dev_ibsta & ERR)  ret  = "GPIB error \n";
+   if (dev_ibsta & TIMO) ret += "Time limit exceeded \n";
+   if (dev_ibsta & END)  ret += "END or EOS detected \n";
+   if (dev_ibsta & SRQI) ret += "SRQ Interrupt received \n";
+   if (dev_ibsta & RQS)  ret += "Device requesting service \n";
+   if (dev_ibsta & CMPL) ret += "I/O completed \n";
+   if (dev_ibsta & LOK)  ret += "Lockout state \n";
+   if (dev_ibsta & REM)  ret += "Remote state \n";
+   if (dev_ibsta & CIC)  ret += "Controller-In-Charge \n";
+   if (dev_ibsta & ATN)  ret += "Attention is asserted \n";
+   if (dev_ibsta & TACS) ret += "Talker \n";
+   if (dev_ibsta & LACS) ret += "Listener \n";
+   if (dev_ibsta & DTAS) ret += "Device trigger state \n";
+   if (dev_ibsta & DCAS) ret += "Device clear state \n";
+   return ret;    
 }
 
-void GpibComms::gpib_init()
-{
-    YAT_TRACE("GpibComms::gpib_init");
-    try
-    {
-        std::vector<std::string> params;
-
-        params.push_back("++mode 1\n");
-        //params.push_back("++eot_enable 0\n");
-        //params.push_back("++eot_char 13\n");
-        params.push_back("++auto 0\n");
-        params.push_back("++eos 3\n");
-        params.push_back("++eoi 1\n");
-        params.push_back("++addr " + TO_STRING(m_config.gpib_address) + "\n");
-        params.push_back("++read_tmo_ms 3000\n");
-        params.push_back("++ver\n");
-        //params.push_back("++read_tmo_ms " + TO_STRING(TIMEOUT>3000 ? 3000 : TIMEOUT) + "\n");
-
-        for(size_t i=0; i<params.size(); i++)
-        {
-            write(params[i]);
-        }
-
-        std::string ver;
-        wait_data(TIMEOUT, false);
-        read();
-        ver.assign(m_buffer.base(), m_buffer.length());
-
-        YAT_INFO << ver; // Get version
-
-        // write("++rst\n");
-        // yat::Thread::sleep(8000);
-
-
+/**
+ * ibserr register string conversion.
+ * This method returns error string corresponding to err register.
+ */
+std::string GpibComms::iberrToString() {
+   
+    std::string ret("UNHANDLED ERROR ID !");
+    
+    if (dev_iberr>=0 && dev_iberr<=28) 
+    {   
+        return error_array[dev_iberr];
     }
-    catch(const yat::Exception & ex)
-    {
-        RETHROW_EXCEPTION(ex);
-    }
-
+    
+    return ret;
 }
 
-std::string GpibComms::escape_chars(const std::string& input)
+/**
+ * This method returns device's iberr register.
+ */
+int GpibComms::getiberr()
 {
-    std::string output;
-    unsigned char c;
-
-    output.reserve(input.size() + 5);
-
-    for (size_t i; i < input.size(); i++)
-    {
-        c = input[i];
-        switch(c)
-        {
-            case '\n':
-            case '\r':
-            case '+':
-            case 27:
-            output.push_back(27);
-
-            default:
-            output.push_back(c);
-        }
-    }
-
-    output.push_back('\n');
-
-    return output;
+    return dev_iberr;
 }
 
-void GpibComms::gpib_write(const std::string & argin, bool ask_talk)
+yat::Buffer<char>& GpibComms::getBuffer()
 {
-    YAT_TRACE("GpibComms::gpib_write");
-    write(escape_chars(argin));
-    if(ask_talk) write(ask_str);
+    return m_buffer;
 }
 
-void GpibComms::gpib_read(std::string & result, bool ask_talk)
+/**
+ * This method returns device's ibsta register.
+ */
+int GpibComms::getibsta()
 {
-    YAT_TRACE("GpibComms::gpib_read");
-    if(ask_talk) write(ask_str);
-    wait_data(TIMEOUT, false);
-    read();
-    result.assign(m_buffer.base(), m_buffer.length());
+    return dev_ibsta;
 }
 
-void GpibComms::gpib_blocking_read(std::string & result, size_t timeout,
-    bool ask_talk)
+/**
+ * This method returns device's ibcnt register.
+ */
+unsigned int GpibComms::getibcnt()
 {
-    YAT_TRACE("GpibComms::gpib_blocking_read");
-    if(ask_talk) write(ask_str);
-    if(wait_data(timeout, true))
-    {
-        read();
-        result.assign(m_buffer.base(), m_buffer.length());
-    }
+    return dev_ibcnt;
+}    
+
+/**
+ * This method returns device's ID. This is usefull for controlling.
+ * device from a gpib board. For example : Method BCclr needs this value
+ * to clear a device.
+ */
+int GpibComms::getDeviceID()
+{
+    return device_ID;
 }
 
-void GpibComms::gpib_flush(std::string & result, bool ask_talk)
+/**
+ * This method returns device's name. 
+ * This mean, the name passed to the constructor as string, or the name 
+ * built with the constructor using address e.g. dev4
+ */
+int GpibComms::getDeviceAddr()
 {
-    YAT_TRACE("GpibComms::gpib_flush");
-    if(ask_talk)
-    {
-        write(ask_str);
-    }
-    wait_data(TIMEOUT, false);
-    if(is_to_read())
-    {
-        read();
-        result.assign(m_buffer.base(), m_buffer.length());
-    }
+    return devAddr;
+}
+/**
+ * This method is for internal class use. 
+ * GPIB iberr, ibsta and ibcnt are global to all devices. The GpibComms 
+ * class will call this method after all NI488 / NI488.2 function call, 
+ * to save a specific device state. This method is must not be used from
+ * outside the GpibComms class.
+ */
+void GpibComms::saveState()
+{
+    dev_iberr = iberr;
+    dev_ibsta = ibsta;
+    dev_ibcnt = ibcntl;
+    return;
+
+#ifdef WIN32
+    dev_iberr = ThreadIberr ();
+    dev_ibsta = ThreadIbsta ();
+    dev_ibcnt = ThreadIbcntl ();
+#else
+    dev_iberr = iberr;
+    dev_ibsta = ibsta;
+    dev_ibcnt = ibcntl;
+#endif
 }
 
-bool GpibComms::gpib_read_raw(bool ask_talk)
+/**
+ * This method is for internal class use. 
+ * GPIB iberr, ibsta and ibcnt are global to all devices. The GpibComms 
+ * class will call this method before all NI488 / NI488.2 function call, 
+ * to reset a specific device state. This method must not be used from
+ * outside the GpibComms class.
+ */
+void GpibComms::resetState()
 {
-    if(ask_talk)
-    {
-        write(ASK_RAW_STR);
-    }
-    read();
-    return true;
+    dev_iberr = 0;
+    dev_ibsta = 0;
+    dev_ibcnt = 0;
 }
 
-bool GpibComms::wait_data(size_t timeout, bool throw_exception)
-{
-    try
-    {
-        return m_sock->wait_input_data(timeout, throw_exception);
-    }
-    catch(const yat::SocketException & se)
-    {
-        RETHROW_SOCKET_EXCEPTION(se);
-    }
-    catch(...)
-    {
-        THROW_EXCEPTION(
-            "UNKNOWN ERROR",
-            "Unknown error in socket",
-            "GpibComms::wait_data");
-    }
-}
+/**
+ * This method test if the device is alive on the bus.
+ * If returns 0: nobody there, else ok.
+ */
+bool GpibComms::isAlive() {
 
-bool GpibComms::is_to_read()
-{
-    try
+    if (device_ID  >0)
     {
-        return m_sock->can_read_without_blocking();
-    }
-    catch(const yat::SocketException & se)
-    {
-        RETHROW_SOCKET_EXCEPTION(se);
-    }
-    catch(...)
-    {
-        THROW_EXCEPTION(
-            "UNKNOWN ERROR",
-            "Unknown error in socket",
-            "GpibComms::is_to_read");
-    }
-}
-
-void GpibComms::write(const std::string & argin)
-{
-    if(!m_is_initialized)
-    {
-        THROW_EXCEPTION(
-            "NO CONNEXION",
-            "Socket is not connected!",
-            "GpibComms::write");
-    }
-    if(argin.size() == 0)
-    {
-        THROW_EXCEPTION(
-            "OUT OF RANGE",
-            "Input argument is empty!",
-            "GpibComms::write");
-    }
-    try
-    {
-        m_sock->send(argin);
-        YAT_RESULT << "GpibComms::write string = ["
-            << Utils::make_string_readable(argin)
-            << "], hex = "
-            << Utils::string_to_hex_digits(argin)
-            << std::endl;
-    }
-    catch(const yat::SocketException & se)
-    {
-        RETHROW_SOCKET_EXCEPTION(se);
-    }
-    catch(...)
-    {
-        THROW_EXCEPTION(
-            "UNKNOWN ERROR",
-            "Unknown error during socket send!",
-            "GpibComms::write");
-    }
-}
-
-void GpibComms::read()
-{
-    if(!m_is_initialized)
-    {
-        THROW_EXCEPTION(
-            "NO CONNEXION",
-            "Socket is not connected!",
-            "GpibComms::read");
-    }
-
-    try
-    {
-        size_t nb_received = m_sock->receive(m_buffer.base(), m_buffer.capacity());
-        m_buffer.force_length(nb_received);
-
-        if(nb_received < 50)
-        {
-            YAT_RESULT << "GpibComms::read answer = ["
-            << Utils::make_string_readable(m_buffer.base(), m_buffer.length())
-            << "], answer size = "
-            << nb_received
-            << std::endl;
-        }
+        int tmp = ibln( gpib_board , devAddr, NO_SAD, &alive);
+        if (alive !=0)
+            return true;
         else
-        {
-            // YAT_RESULT << "GpibComms::read answer of size = "
-            // << nb_received
-            // << std::endl;
-        }
-        
+            return false;
     }
-    catch(const yat::SocketException & se)
-    {
-        RETHROW_SOCKET_EXCEPTION(se);
-    }
-    catch(...)
-    {
-        THROW_EXCEPTION(
-            "UNKNOWN ERROR",
-            "Unknown error during socket receive!",
-            "GpibComms::read");
-    }
+    else
+        return false;
+
 }
 
-
-std::string GpibComms::sock_status(int val)
+/**
+ * This method send a string to the encapsulated device. 
+ * Return the number of data written. 
+ */
+void GpibComms::write(const std::string & m) 
 {
-    switch (val)
+      resetState();
+    ibwrt(device_ID,(char *) m.c_str(),m.length() );  
+    saveState();
+
+    if (dev_ibsta & ERR)
     {
-    case yat::SoErr_NoError:
-        return ", No Error";
-        
-    case yat::SoErr_BadMemAddress:
-        return ", The receive buffer pointer(s) point outside the processes address space";
-        
-    case yat::SoErr_AddressInUse:
-        return ", Address is already in use (bind & connect)";
-        
-    case yat::SoErr_AddressNotAvailable:
-        return ", Address not available on machine (bind & connect)";
-        
-    case yat::SoErr_BadDescriptor:
-        return ", Invalid socket descriptor (socket)";
-        
-    case yat::SoErr_BadMessage:
-        return ", Message signature is invalid";
-        
-    case yat::SoErr_ConnectionClosed:
-        return ", Connection was closed (or broken) by other party";
-        
-    case yat::SoErr_ConnectionRefused:
-        return ", Connection refused by server";
-        
-    case yat::SoErr_DatagramTooLong:
-        return ", Datagram too long to send atomically";
-        
-    case yat::SoErr_InvalidOption:
-        return ", Invalid option for socket protocol";
-        
-    case yat::SoErr_IsConnected:
-        return ", Socket is already connected";
-        
-    case yat::SoErr_NotConnected:
-        return ", Socket is not connected";
-        
-    case yat::SoErr_OpNotSupported:
-        return ", Operation is not supported for this socket";
-        
-    case yat::SoErr_PrivilegedPort:
-        return ", User does not have acces to privileged ports (bind)";
-        
-    case yat::SoErr_TimeOut:
-        return ", Time out was reached for operation (receive & send)";
-        
-    case yat::SoErr_WouldBlock:
-        return ", Current operation is blocking (non-blocking socket)";
-        
-    case yat::SoErr_InProgress:
-        return ", Op. in progress";
-        
-    case yat::SoErr_OSInterrupt:
-        return ", Op. interrupted by OS event (signal)";
-        
-    case yat::SoErr_OutOfMemory:
-        return ", Memory allocation failed.";
-        
-    case yat::SoErr_Other:
-        return ", Any other OS specific error";
-        
-    default:
-        return "";
+        throw yat::Exception("Error occured while writing to GPIB", iberrToString() + " - " + ibstaToString(), device_name, iberr);
+    } 
+    
+    //return dev_ibcnt;    /* Return saved incnt value */
+}
+
+
+void GpibComms::write_and_read(const std::string& argin, std::string & result, int size)
+{
+    write(argin);
+    read(result, size);
+}
+
+/*
+ * This method reads a string from the encapsulated device.
+ * Read a specified size string from the device. Return the string readed. 
+ * A byte read value is store in private int 'dev_ibcnt' and is valid 
+ * until another call to a NI488 function is made. It should not be accessed
+ * throught get_ibcnt, because string.length() already do that.
+ */
+void GpibComms::read(std::string & result, int size)
+{
+    read_raw(m_buffer, size);
+
+    result.assign(m_buffer.base(), ibcntl);
+}
+
+int GpibComms::read_raw(yat::Buffer<char>& buff, int size)
+{
+    resetState();
+
+    if(size <= 0 || size > buff.capacity()) size = buff.capacity();
+    
+    ibrd(device_ID, buff.base(), size);
+    saveState();
+
+    if (dev_ibsta & ERR)
+    {
+        throw yat::Exception("Error occured while reading to GPIB", iberrToString() + " - " + ibstaToString(), device_name, iberr);
+    }
+
+    return ibcntl;
+}
+
+/******************************************************************************************/
+/*
+ *    These methods perform a write or a read of binary data on the GPIB device
+ *
+ *
+/******************************************************************************************/
+void GpibComms::sendData(const char *argin, long count)
+{
+    resetState();
+    Send ( gpib_board , MakeAddr(devAddr, 0),(char *)argin, count, NLend);
+    saveState();
+    if (dev_ibsta & ERR)
+    {
+        throw yat::Exception("Error occured while writing binary data to GPIB", iberrToString() + " - " + ibstaToString(), device_name, iberr);
+    } 
+}
+
+char *GpibComms::receiveData(long count)
+{
+// allocate buffer for reading data on the GPIB bus
+char* buffer = new char [count+1];
+
+if( !buffer )
+    {
+        throw yat::Exception("Cannot allocate memory for receiveData", iberrToString() + " - " + ibstaToString(), device_name, iberr);
+    }
+  
+    memset(buffer,0, count+1);
+
+    resetState();
+    Receive ( gpib_board, MakeAddr(devAddr, 0), buffer, count, STOPend);
+    // The actual number of bytes transferred is returned in the  variable, ibcntl.
+    // we use ThreadIbcntl for thread safety
+    saveState();
+
+    if (dev_ibsta & ERR)
+    {
+        delete [] buffer;
+        throw yat::Exception("Error occured while reading binary data from GPIB", iberrToString() + " - " + ibstaToString(), device_name, iberr);
+    } 
+
+    //long bytes_read=ThreadIbcntl ();
+    // CAUTION/TODO : If long bytes_read != count what should we do : 
+    // a) throw an exception: but it may be too much to take such a decision at low level
+    // b) reallocate a data buffer of the right size (long bytes_read), copy the buffer data into it, 
+    // and return this buffer of the rigth size to the caller . this last opion is our prefered but 
+    // for now we prefer to avoid this potential extracopy of data 
+    // 
+
+    return buffer;
+}
+/******************************************************************************************/
+
+/**
+ * This method sends a trigger signal to the gpib device. The device was
+ * previously set to wait for a trigger command. When it receivces the signal,
+ * the device sends its measurement. You can get it with read Command.
+ */
+void GpibComms::trigger()
+{
+    resetState();
+    ibtrg(device_ID);  
+    saveState();
+    if (dev_ibsta & ERR)
+    {
+        throw yat::Exception("Error occured while triggering GPIB", iberrToString() + " - " + ibstaToString(), device_name, iberr);
+    } 
+}
+
+void GpibComms::wait_events(int mask)
+{
+    resetState();
+    ibwait(device_ID, mask);
+    saveState();
+    if (dev_ibsta & ERR)
+    {
+        throw yat::Exception("Error occured while waiting for GPIB", iberrToString() + " - " + ibstaToString(), device_name, iberr);
+    } 
+
+}
+
+
+/**
+ * Set the device time out value. 
+ * Warning: These values are predefined. With GPIB you can only choose
+ * between 16 differents time out values. #defined values can be found 
+ * in GpibComms.h.
+ */
+void GpibComms::setTimeOut(int v)
+{
+    resetState();
+    if ( (v >= 0) && (v <= 17) )
+    {
+        ibtmo(device_ID,v);  
+        saveState();
 
     }
+    else 
+    {
+        throw yat::Exception("Error occured while writing to GPIB", "Value out of range - [0-15] value expected", device_name, iberr);
+    }
+
+    // v contains correct value, does the cmd terminate correctly ?
+    if ( dev_ibsta & ERR )
+    {
+        throw yat::Exception("Error occured while setting time out on GPIB", iberrToString() + " - " + ibstaToString(), device_name, iberr);
+    } 
 }
+
+/**
+ * Clear a specified device.
+ * This method sends a clear signal on the GPIB bus for a specified device.
+ */
+void GpibComms::clr() 
+{
+    resetState();
+    ibclr( getDeviceID() );  
+    saveState();
+    if (dev_ibsta & ERR)
+    {
+        throw yat::Exception("Error occured while ibclr on GPIB", iberrToString() + " - " + ibstaToString(), device_name, iberr);
+    } 
+}
+
+/**
+ * Get a list of devices connected on the bus.
+ * This method returns a reference on vector of GpibCommsInfo, containing 
+ * information on all GpibComms found on the gpib bus. The referenced variable
+ * is  just below. Provided info are device *IDN string, primary address,
+ * secondary address. See GpibCommsInfo for more information on these fields.
+ * Board must be CIC to perform FindLstn !
+ */
+std::vector<GpibCommsInfo>& GpibComms::getConnectedDeviceList()
+{
+  char idn_buffer[MAX_DEV_IDN_STR];
+  int loop, nb_listener;
+  Addr4882_t scanlist[MAX_DEV_ON_BOARD+1]; // +1 for terminal NOADDR
+  Addr4882_t result[MAX_DEV_ON_BOARD];
+  
+  
+  inf.clear(); // Empty vector first.
+  // Build address list to scan, add NOADDR list terminator 
+  for (loop = 0; loop < MAX_DEV_ON_BOARD; loop++)
+    scanlist[loop] = loop;
+  scanlist[MAX_DEV_ON_BOARD] = NOADDR;
+  
+  resetState();
+  FindLstn(gpib_board, scanlist, result, MAX_DEV_ON_BOARD);
+  saveState();
+  
+  if (dev_ibsta & ERR)
+  {
+    throw yat::Exception("Error occured while FindLstn on GPIB", iberrToString() + " - " + ibstaToString(), device_name, iberr);
+  } 
+  
+  nb_listener = dev_ibcnt -1;//-1; MODIF
+  // Start from 1 to avoid gpib board 0 who does not answer to "*IDN?"
+  for (loop = 1; loop <= nb_listener; loop++ )    
+  {
+    GpibCommsInfo *t = new GpibCommsInfo();
+    
+    t->dev_pad = GetPAD( result[loop] );
+    t->dev_sad = GetSAD( result[loop] );
+    t->dev_idn = "Device does not support *IDN? command.\n";
+    
+    resetState();
+    Send(gpib_board, result[loop],(char *)"*IDN?", 5L, NLend);
+    saveState();
+    if (! (dev_ibsta & ERR) )
+    {
+      memset(idn_buffer,0, MAX_DEV_IDN_STR);
+      Receive(gpib_board, result[loop], idn_buffer, MAX_DEV_IDN_STR, STOPend);
+      
+      // Most of gpib device understand '*IDN?' command, and return a string
+      // of identification. Some old device does implement this command, like
+      // Tektronik 2440 who implements his own ID command: 'ID?'. On *IDN?
+      // cmd the 2440 return char 255, as bad command.
+      // Thats why if a device return an ID string < 5 byte, or finish in 
+      //Time Out error, we admit that it does not implement command.
+      if ( (!(dev_ibsta & ERR)) && (ibcnt > 5) ) // Ibcnt = nb of byte received.
+      {
+        t->dev_idn = idn_buffer;
+      } 
+    } 
+    inf.push_back( *t );
+  }
+ 
+  return inf;
+}
+
+

@@ -15,36 +15,6 @@ CommandInterface::~CommandInterface()
     YAT_TRACE("CommandInterface::~CommandInterface");
 }
 
-std::string CommandInterface::command_and_wait(const Command & cmd, size_t timeout,
-    std::vector<std::string> * args, bool ack)
-{
-    YAT_INFO << "CommandInterface::command_and_wait: " << cmd.name() << std::endl;
-    try
-    {
-        std::string result;
-        m_comms.gpib_write(cmd.str(args), cmd.is_talk_auto());
-        cmd.sleep();
-        m_comms.gpib_blocking_read(result, timeout, !cmd.is_talk_auto());
-        if(ack)
-        {
-            if(!cmd.is_ack(result))
-            {
-                THROW_EXCEPTION(
-                    "NOT ACKNOWLEDGED",
-                    "Received: " + Utils::make_string_readable(result) +
-                    " for command " + cmd.name(),
-                    "CommandInterface::command_and_wait");
-            }
-        }
-        return result;
-    }
-    catch(const yat::Exception & ex)
-    {
-        report_error("CommandInterface::command_and_wait " + cmd.name() + " failed!\n");
-        RETHROW_EXCEPTION(ex);
-    }
-}
-
 std::string CommandInterface::command_and_read(const Command & cmd,
     std::vector<std::string> * args, bool ack)
 {
@@ -52,9 +22,7 @@ std::string CommandInterface::command_and_read(const Command & cmd,
     try
     {
         std::string result;
-        m_comms.gpib_write(cmd.str(args), cmd.is_talk_auto());
-        cmd.sleep();
-        m_comms.gpib_read(result, !cmd.is_talk_auto());
+        m_comms.write_and_read(cmd.str(args), result, cmd.expected_reply());
         if(ack)
         {
             if(!cmd.is_ack(result))
@@ -71,36 +39,6 @@ std::string CommandInterface::command_and_read(const Command & cmd,
     catch(const yat::Exception & ex)
     {
         report_error("CommandInterface::command_and_read " + cmd.name() + " failed!\n");
-        RETHROW_EXCEPTION(ex);
-    }
-}
-
-std::string CommandInterface::command_and_flush(const Command & cmd,
-    std::vector<std::string> * args, bool ack)
-{
-    YAT_INFO << "CommandInterface::command_and_flush: " << cmd.name() << std::endl;
-    try
-    {
-        std::string result;
-        m_comms.gpib_write(cmd.str(args), cmd.is_talk_auto());
-        cmd.sleep();
-        m_comms.gpib_flush(result, !cmd.is_talk_auto());
-        if(ack)
-        {
-            if(!cmd.is_ack(result))
-            {
-                THROW_EXCEPTION(
-                    "NOT ACKNOWLEDGED",
-                    "Received: " + Utils::make_string_readable(result) +
-                    " for command " + cmd.name(),
-                    "CommandInterface::command_and_flush");
-            }
-        }
-        return result;
-    }
-    catch(const yat::Exception & ex)
-    {
-        report_error("CommandInterface::command_and_flush " + cmd.name() + " failed!\n");
         RETHROW_EXCEPTION(ex);
     }
 }

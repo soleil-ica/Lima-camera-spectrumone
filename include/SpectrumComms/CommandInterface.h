@@ -28,19 +28,11 @@ public:
         {report_event(str, EventType::Info);}
     void report_fatal(const std::string & str)
         {report_event(str, EventType::Fatal);}
-
-    std::string command_and_wait(const Command & cmd, size_t timeout,
-        std::vector<std::string> * args, bool ack = false);
-    std::string command_and_wait(const Command & cmd, size_t timeout, bool ack = false)
-        {return command_and_wait(cmd, timeout, 0, ack);}
+        
     std::string command_and_read(const Command & cmd,
         std::vector<std::string> * args, bool ack = false);
     std::string command_and_read(const Command & cmd, bool ack = false)
         {return command_and_read(cmd, 0, ack);}
-    std::string command_and_flush(const Command & cmd,
-        std::vector<std::string> * args, bool ack = false);
-    std::string command_and_flush(const Command & cmd, bool ack = false)
-        {return command_and_flush(cmd, 0, ack);}
 
     GpibComms m_comms;
 

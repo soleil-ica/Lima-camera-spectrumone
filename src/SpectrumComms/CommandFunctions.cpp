@@ -8,7 +8,7 @@ void CommandTask::reset(std::string & reply, const size_t & number_retries)
 
     try
     {
-        m_interface.m_comms.gpib_flush(reply);
+        //m_interface.m_comms.gpib_flush(reply);
 
         do
         {
@@ -22,10 +22,7 @@ void CommandTask::reset(std::string & reply, const size_t & number_retries)
 
             retries ++;
 
-            //m_interface.m_comms.gpib_write("Z0", false);
-
-            m_interface.command_and_flush(CCD_REBOOT_IF_HUNG);
-            reply = m_interface.command_and_flush(CCD_WHERE_AM_I);
+            reply = m_interface.command_and_read(CCD_WHERE_AM_I);
 
         } while(IS_NOT_EQUAL(reply, "B") && IS_NOT_EQUAL(reply, "F"));
     }
@@ -56,10 +53,10 @@ void CommandTask::send_table(const std::string & table, unsigned offset)
             args.push_back(TO_STRING(offset));
             args.push_back(TO_STRING(values[i].size()));
 
-            result = m_interface.command_and_wait(CCD_WRITE_DATA, 20000, &args);
+            result = m_interface.command_and_read(CCD_WRITE_DATA, &args);
 
             // send raw data
-            m_interface.m_comms.gpib_write(values[i], false);
+            m_interface.m_comms.write(values[i]);
         }
     }
     catch(const yat::Exception & ex)
@@ -154,7 +151,7 @@ void CommandTask::get_config(const std::string & config_str, std::vector<std::st
         args.push_back(cfg_file.get_param_value("max_gain", true));
         args.push_back(cfg_file.get_param_value("h_pixel_spacing", true));
         args.push_back(cfg_file.get_param_value("v_pixel_spacing", true));
-        args.push_back(cfg_file.get_param_value("total_parallel_pixe", true));
+        args.push_back(cfg_file.get_param_value("total_parallel_pixels", true));
         args.push_back(cfg_file.get_param_value("total_serial_pixels", true));
     }
     catch(const yat::Exception & ex)
@@ -184,7 +181,6 @@ void CommandTask::send_all_tables()
     size_t i;
     std::string suffix, result;
 
-
     suffix = m_config.tables_mode + ".TAB";
 
     std::vector<std::string> tab_names;
@@ -210,12 +206,10 @@ void CommandTask::send_all_tables()
     offsets.push_back(0XE800);
     offsets.push_back(0XEC00);
 
-    m_interface.m_comms.make_ack(true);
     for(i=0; i<8; i++)
     {
         send_table(m_config.tables_path + tab_names[i] + suffix, offsets[i]);
     }
-    m_interface.m_comms.make_ack(false);
 
     m_interface.report_info("INIT SEQUENCE: Data loaded!\n");
 }
@@ -243,7 +237,7 @@ void CommandTask::config_CCD()
 
     m_interface.command_and_read(CCD_READ_CONFIG, true);
 
-    m_interface.command_and_flush(CCD_UNKNOWN_3, true);
+    m_interface.command_and_read(CCD_UNKNOWN_3, true);
 
     m_interface.command_and_read(CCD_READ_GAIN, true);
 
