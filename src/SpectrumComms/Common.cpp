@@ -47,11 +47,10 @@ unsigned char Utils::hex_digit_to_char(const unsigned char & c)
 std::string Utils::string_to_hex_digits(const std::string& input)
 {
     std::string output;
-    unsigned char c;
 
     output.reserve(input.size() * 3 - 1);
 
-    for (size_t i; i < input.size()-1; i++)
+    for (size_t i=0; i < input.size()-1; i++)
     {
         char_to_hex_digits(input[i], output);
         output.push_back(' ');
@@ -89,7 +88,7 @@ std::string Utils::make_string_readable(const char* dta, size_t nb)
 
     output.reserve(nb + 5);
 
-    for (size_t i; i < nb; i++)
+    for (size_t i=0; i < nb; i++)
     {
         c = dta[i];
         if(c >= 32 && c <= 126)
