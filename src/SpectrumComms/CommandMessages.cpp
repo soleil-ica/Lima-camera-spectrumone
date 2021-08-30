@@ -418,12 +418,8 @@ void CommandTask::t_snap(const SnapInfo & frame)
 
         m_interface.command_and_read(CCD_READ_IMAGE, true);
 
-        m_interface.m_comms.setTimeOut(14);
+        returned_size = m_interface.m_comms.read_raw(buff, expected_size, true);
 
-
-        returned_size = m_interface.m_comms.read_raw(buff, expected_size);
-
-        m_interface.m_comms.setTimeOut(13);
         if(returned_size != expected_size)
         {
             THROW_EXCEPTION(
@@ -481,7 +477,7 @@ void CommandTask::t_snap(const SnapInfo & frame)
         {
             for(size_t x=0; x<frame.x_size; x++)
             {
-                *ptr = ((unsigned short)buff.base()[count] << 8) | buff.base()[count+1];
+                *ptr = ((unsigned short)(reinterpret_cast<unsigned char&>(buff.base()[count])) << 8) | (reinterpret_cast<unsigned char&>(buff.base()[count+1]));
                 count+=2;
                 ptr++;
             }

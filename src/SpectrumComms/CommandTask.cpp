@@ -33,7 +33,7 @@ CommandTask::CommandTask(GpibComms::GpibConfig gpib_config, CommandConfig comman
 {
     YAT_TRACE("CommandTask::CommandTask");
 
-    m_cam_data.modified = false;
+    // Default data
     m_cam_data.x_origin = 0;
     m_cam_data.y_origin = 0;
     m_cam_data.x_size = 2000;
@@ -53,8 +53,7 @@ void CommandTask::connect()
 {
     YAT_TRACE("CommandTask::connect");
 
-    yat::Message* msg = yat::Message::allocate(CONNECT_SOCKET,
-        INIT_MSG_PRIORITY, true);
+    yat::Message* msg = yat::Message::allocate(CONNECT_SOCKET, INIT_MSG_PRIORITY, true);
     post(msg);
 }
 
@@ -62,8 +61,7 @@ void CommandTask::init_sequence(const bool & force_config)
 {
     YAT_TRACE("CommandTask::init_sequence");
 
-    yat::Message* msg = yat::Message::allocate(INIT_SEQUENCE,
-        DEFAULT_MSG_PRIORITY, true);
+    yat::Message* msg = yat::Message::allocate(INIT_SEQUENCE, DEFAULT_MSG_PRIORITY, true);
     msg->attach_data(force_config);
     post(msg);
 }
@@ -72,49 +70,55 @@ void CommandTask::set_exp_time(const int & exp_time)
 {
     YAT_TRACE("CommandTask::set_exp_time");
 
-    if(exp_time == m_cam_data.exp_time) return;
+    if(exp_time != m_cam_data.exp_time)
+    {
+        // Post a message with the new exp_time
+        yat::Message* msg = yat::Message::allocate(SET_EXP_TIME, DEFAULT_MSG_PRIORITY, true);
+        msg->attach_data(exp_time);
+        post(msg);
 
-    yat::Message* msg = yat::Message::allocate(SET_EXP_TIME,
-        DEFAULT_MSG_PRIORITY, true);
-    msg->attach_data(exp_time);
-    post(msg);
-
-    m_cam_data.exp_time = exp_time;
+        // Update exp_time in member data
+        m_cam_data.exp_time = exp_time;
+    }
 }
 
 void CommandTask::set_gain(const int & gain)
 {
     YAT_TRACE("CommandTask::set_gain");
 
-    if(gain == m_cam_data.gain) return;
+    if(gain != m_cam_data.gain)
+    {
+        // Post a message with the new gain
+        yat::Message* msg = yat::Message::allocate(SET_GAIN, DEFAULT_MSG_PRIORITY, true);
+        msg->attach_data(gain);
+        post(msg);
 
-    yat::Message* msg = yat::Message::allocate(SET_GAIN,
-        DEFAULT_MSG_PRIORITY, true);
-    msg->attach_data(gain);
-    post(msg);
-
-    m_cam_data.gain = gain;
+        // Update gain in member data
+        m_cam_data.gain = gain;
+    }
 }
 
 void CommandTask::set_num_flushes(const int & num)
 {
     YAT_TRACE("CommandTask::set_num_flushes");
 
-    if(num == m_cam_data.num_flushes) return;
+    if(num == m_cam_data.num_flushes)
+    {
+        // Post a message with the new num_flushes
+        yat::Message* msg = yat::Message::allocate(SET_FLUSHES, DEFAULT_MSG_PRIORITY, true);
+        msg->attach_data(num);
+        post(msg);
 
-    yat::Message* msg = yat::Message::allocate(SET_FLUSHES,
-        DEFAULT_MSG_PRIORITY, true);
-    msg->attach_data(num);
-    post(msg);
-
-    m_cam_data.num_flushes = num;
-    // m_cam_data.modified = true;
+        // Update num_flushes in member data
+        m_cam_data.num_flushes = num;
+    }
 }
 
 void CommandTask::prepare(const FrameInfo & frame)
 {
     YAT_TRACE("CommandTask::prepare");
 
+    // Check if data changed
     if( frame.x_origin != m_cam_data.x_origin ||
         frame.y_origin != m_cam_data.y_origin ||
         frame.x_size != m_cam_data.x_size ||
@@ -123,21 +127,22 @@ void CommandTask::prepare(const FrameInfo & frame)
         frame.y_bin != m_cam_data.y_bin)
         m_cam_data.modified = true;
 
-    if(!m_cam_data.modified) return;
+    if(m_cam_data.modified)
+    {
+        // If data was modified, update and send a prepare message
+        m_cam_data.x_origin = frame.x_origin;
+        m_cam_data.y_origin = frame.y_origin;
+        m_cam_data.x_size = frame.x_size;
+        m_cam_data.y_size = frame.y_size;
+        m_cam_data.x_bin = frame.x_bin;
+        m_cam_data.y_bin = frame.y_bin;
 
-    m_cam_data.x_origin = frame.x_origin;
-    m_cam_data.y_origin = frame.y_origin;
-    m_cam_data.x_size = frame.x_size;
-    m_cam_data.y_size = frame.y_size;
-    m_cam_data.x_bin = frame.x_bin;
-    m_cam_data.y_bin = frame.y_bin;
+        yat::Message* msg = yat::Message::allocate(PREPARE, DEFAULT_MSG_PRIORITY, true);
+        msg->attach_data(m_cam_data);
+        post(msg);
 
-    yat::Message* msg = yat::Message::allocate(PREPARE,
-        DEFAULT_MSG_PRIORITY, true);
-    msg->attach_data(m_cam_data);
-    post(msg);
-
-    m_cam_data.modified = false;
+        m_cam_data.modified = false;
+    }
 }
 
 void CommandTask::snap(void* buffer_ptr, const int & x_size, const int & y_size)

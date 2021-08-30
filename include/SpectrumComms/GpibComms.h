@@ -29,6 +29,8 @@
 #include <yat/memory/DataBuffer.h>
 #include <yat/threading/Thread.h>
 
+#include "Common.h"
+
 /**
 * Device's default size buffer for read operations.
 */
@@ -111,9 +113,12 @@ public:
 
     struct GpibConfig
     {
-        std::string host; // Gpib controler Host (Ip address or hostname)
-        size_t      port; // Gpib controler Port
+        size_t      board_index; // Gpib controler Host (Ip address or hostname)
         size_t      gpib_address; // Adress of the device to reach on the Gpib Bus
+        std::string default_timeout_str;
+        std::string long_timeout_str;
+        int         default_timeout;
+        int         long_timeout;
     };
 
     GpibComms(GpibConfig config);
@@ -132,7 +137,8 @@ public:
   int        getDeviceAddr();                              // Get device gpib address;
  void write(const std::string & argin);                                  // Send a string to a gpib device.     
   void read(std::string & result, int size = 0);        // Read a std::string from a gpib device.     
-  int read_raw(yat::Buffer<char>& buff, int size = 0);
+  int read_raw(yat::Buffer<char>& buff, int size = 0, bool long_timeout = false);
+  
 void write_and_read(const std::string& argin, std::string & result, int size = 0);                    // Perform a write/read operation in a row.
 
 
@@ -140,6 +146,7 @@ void write_and_read(const std::string& argin, std::string & result, int size = 0
   void    sendData(const char *, long count);                // Write binary data on a GPIB device
   void      wait_events(int mask);
 
+  int getTimeOut(const std::string& tmo);                        // Set Device Time out.
   void    setTimeOut(int tmo);                        // Set Device Time out.
   bool    isAlive();                                        // Check the presence of the device on the bus.
   void    trigger();                                        // Trigger the device.        

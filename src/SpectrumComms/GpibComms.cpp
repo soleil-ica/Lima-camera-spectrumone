@@ -94,6 +94,14 @@ GpibComms::GpibComms(GpibConfig config):
     m_config(config),
     m_is_initialized(false)
 {
+    if(!m_config.default_timeout_str.empty())
+    {
+        m_config.default_timeout = getTimeOut(m_config.default_timeout_str);
+    }
+    if(!m_config.long_timeout_str.empty())
+    {
+        m_config.long_timeout = getTimeOut(m_config.long_timeout_str);
+    }
 }
 
 void GpibComms::delay(int t) // les valeurs transmises doivent �tre compatibles avec ibtmo()
@@ -124,9 +132,7 @@ void GpibComms::connect()
     devAddr = m_config.gpib_address;
 
     //- Save board id.
-    std::string boardname {"gpib0"};
-    ss = boardname.substr(4);
-    gpib_board = atoi( ss.c_str() );
+    gpib_board = m_config.board_index;
     
     if ((gpib_board < 0) || (gpib_board> MAX_BOARD_INDEX) )
     {
@@ -151,6 +157,8 @@ void GpibComms::connect()
     }
 
     ibconfig(device_ID,IbcEOSrd,0);
+
+    setTimeOut(m_config.default_timeout);
     // ibwait(device_ID,0x100);
 
     // ibtmo(device_ID,T1s);
@@ -280,17 +288,6 @@ void GpibComms::saveState()
     dev_iberr = iberr;
     dev_ibsta = ibsta;
     dev_ibcnt = ibcntl;
-    return;
-
-#ifdef WIN32
-    dev_iberr = ThreadIberr ();
-    dev_ibsta = ThreadIbsta ();
-    dev_ibcnt = ThreadIbcntl ();
-#else
-    dev_iberr = iberr;
-    dev_ibsta = ibsta;
-    dev_ibcnt = ibcntl;
-#endif
 }
 
 /**
@@ -362,11 +359,16 @@ void GpibComms::read(std::string & result, int size)
 {
     read_raw(m_buffer, size);
 
-    result.assign(m_buffer.base(), ibcntl);
+    result.assign(m_buffer.base(), dev_ibcnt);
 }
 
-int GpibComms::read_raw(yat::Buffer<char>& buff, int size)
+int GpibComms::read_raw(yat::Buffer<char>& buff, int size, bool long_timeout)
 {
+    if(long_timeout)
+    {
+        setTimeOut(m_config.long_timeout);
+    }
+
     resetState();
 
     if(size <= 0 || size > buff.capacity()) size = buff.capacity();
@@ -379,7 +381,12 @@ int GpibComms::read_raw(yat::Buffer<char>& buff, int size)
         throw yat::Exception("Error occured while reading to GPIB", iberrToString() + " - " + ibstaToString(), device_name, iberr);
     }
 
-    return ibcntl;
+    if(long_timeout)
+    {
+        setTimeOut(m_config.default_timeout);
+    }
+
+    return dev_ibcnt;
 }
 
 /******************************************************************************************/
@@ -468,8 +475,32 @@ void GpibComms::wait_events(int mask)
  * Set the device time out value. 
  * Warning: These values are predefined. With GPIB you can only choose
  * between 16 differents time out values. #defined values can be found 
- * in GpibComms.h.
+ * in 
  */
+int GpibComms::getTimeOut(const std::string& v)
+{
+    int val = 0;
+    if(IS_EQUAL(v, "TNONE")) val = TNONE;
+    else if(IS_EQUAL(v, "T10us")) val = T10us;
+    else if(IS_EQUAL(v, "T30us")) val = T30us;
+    else if(IS_EQUAL(v, "T100us")) val = T100us;
+    else if(IS_EQUAL(v, "T300us")) val = T300us;
+    else if(IS_EQUAL(v, "T1ms")) val = T1ms;
+    else if(IS_EQUAL(v, "T3ms")) val = T3ms;
+    else if(IS_EQUAL(v, "T10ms")) val = T10ms;
+    else if(IS_EQUAL(v, "T30ms")) val = T30ms;
+    else if(IS_EQUAL(v, "T100ms")) val = T100ms;
+    else if(IS_EQUAL(v, "T300ms")) val = T300ms;
+    else if(IS_EQUAL(v, "T1s")) val = T1s;
+    else if(IS_EQUAL(v, "T3s")) val = T3s;
+    else if(IS_EQUAL(v, "T10s")) val = T10s;
+    else if(IS_EQUAL(v, "T30s")) val = T30s;
+    else if(IS_EQUAL(v, "T100s")) val = T100s;
+    else if(IS_EQUAL(v, "T300s")) val = T300s;
+    else if(IS_EQUAL(v, "T1000s")) val = T1000s;
+    return val;
+}
+
 void GpibComms::setTimeOut(int v)
 {
     resetState();

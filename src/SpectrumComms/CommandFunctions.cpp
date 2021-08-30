@@ -257,11 +257,11 @@ void CommandTask::config_CCD()
 
     m_interface.command_and_read(CCD_UNKNOWN_2, true);
 
-    m_interface.command_and_read(CCD_READ_CONFIG, true);
+   // m_interface.command_and_read(CCD_READ_CONFIG, true);
 
     m_interface.command_and_read(CCD_UNKNOWN_3, true);
 
-    m_interface.command_and_read(CCD_READ_GAIN, true);
+    //m_interface.command_and_read(CCD_READ_GAIN, true);
 
     // Set numb flushes
     args.resize(1);
@@ -271,7 +271,7 @@ void CommandTask::config_CCD()
     m_interface.command_and_read(CCD_STOP_ACQ);
 
 
-    // Set numb flushes
+    // Set exp time
     args[0] = "1000";
     m_interface.command_and_read(CCD_SET_EXP_TIME, &args, true);
 
@@ -284,28 +284,6 @@ void CommandTask::config_CCD()
     args[0] = "0";
     args[1] = "1";
     m_interface.command_and_read(CCD_DEFINE_FORMAT, &args, true);
-
-
-    args.resize(7);
-    args[0] = "0";
-    args[1] = TO_STRING(0);
-    args[2] = TO_STRING(0);
-    args[3] = TO_STRING(2000);
-    args[4] = TO_STRING(800);
-    args[5] = TO_STRING(1);
-    args[6] = TO_STRING(1);
-    m_interface.command_and_read(CCD_DEFINE_AREA, &args, true);
-
-
-    std::string result;
-    std::vector<std::string> split_result;
-    result = m_interface.command_and_read(CCD_GET_DATA_SIZE);
-    yat::StringUtil::split(result, ',', &split_result, true);
-    std::istringstream(split_result[0].substr(1)) >> m_col_size;
-    m_col_size+=2;
-
-    // Set gain flushes
-
 }
 
 
