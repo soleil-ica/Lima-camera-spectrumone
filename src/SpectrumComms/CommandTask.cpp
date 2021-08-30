@@ -103,7 +103,7 @@ void CommandTask::set_num_flushes(const int & num)
 {
     YAT_TRACE("CommandTask::set_num_flushes");
 
-    if(num == m_cam_data.num_flushes)
+    if(num != m_cam_data.num_flushes)
     {
         // Post a message with the new num_flushes
         yat::Message* msg = yat::Message::allocate(SET_FLUSHES, DEFAULT_MSG_PRIORITY, true);
