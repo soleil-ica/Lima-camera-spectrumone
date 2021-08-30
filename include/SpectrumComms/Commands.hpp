@@ -33,6 +33,10 @@
 namespace SpectrumComms
 {
 
+    // ============================================================================
+    //! \class Command
+    //! \brief Class to hold all possible commands for SpectrumOne communication
+    // ============================================================================
     class Command
     {
         public:
@@ -49,6 +53,8 @@ namespace SpectrumComms
 
         const std::string name() const {return m_name;}
 
+        //! \brief Get the command as a string.
+        //! \param args Vector of strings to add as parameters.
         const std::string str(std::vector<std::string> * args) const 
         {
             std::ostringstream ss;
@@ -56,6 +62,7 @@ namespace SpectrumComms
 
             ss << m_str;
 
+            // Add all args
             if(args)
             {
                 for(i=0; i < args->size(); i++)
@@ -65,15 +72,15 @@ namespace SpectrumComms
                 }
             }
 
-
             if (m_term != NO_TERM) ss << m_term;
 
+            // Return the final string
             return ss.str();
         }
 
         void sleep() const
         {
-            //yat::Thread::sleep(500);
+            // Added sleep for specific commands
             if(m_delay != NO_DELAY) yat::Thread::sleep(m_delay);
         }
 
@@ -82,6 +89,7 @@ namespace SpectrumComms
             return IS_EQUAL(m_ack, NO_ACK) ? true : IS_EQUAL(m_ack, resp);
         }
 
+        // Return expected reply size
         int expected_reply() const
         {
             if(IS_EQUAL(m_ack, NO_ACK)) return 0;
@@ -96,6 +104,7 @@ namespace SpectrumComms
         std::string m_name;
     };
 
+    // All the commands that can be used, cf manual:
     static const Command CCD_WHERE_AM_I("WhereAmI", " ");
     static const Command CCD_START_MAIN_PROGRAM("StartMainProgram", "O2000", '\0', "*");
     static const Command CCD_REBOOT_IF_HUNG("RebootIfHung", "\xDE");
@@ -112,15 +121,17 @@ namespace SpectrumComms
     static const Command CCD_START("Start", "Z311,0", '\r', "o");
     static const Command CCD_READ_IMAGE("ReadImage", "Z315,0", '\r', "o");
     static const Command CCD_RESET_IMAGE("ResetImage", "Z317,0", '\r', "o");
-    static const Command CCD_UNKNOWN_1("Unknown1", "Z330,0,0", '\r', "o");
-    static const Command CCD_UNKNOWN_2("Unknown2", "Z348,0,0", '\r', "o");
-    static const Command CCD_UNKNOWN_3("Unknown3", "Z352,0,1", '\r');
     static const Command CCD_SET_SHUTTER("SetShutter", "Z320,0", '\r', "o");
     static const Command CCD_STOP_ACQ("StopAcquisition", "Z314,0", '\r', "o");
     static const Command CCD_STATUS("GetStatus", "Z312,0", '\r');
     static const Command CCD_SET_FLUSHES("SetFlushesNumber", "Z305,0", '\r', "o");
     static const Command CCD_DEFINE_FORMAT("DefineAcqFormat", "Z325,0", '\r', "o");
     static const Command CCD_DEFINE_AREA("DefineArea", "Z326,0", '\r', "o");
+
+    // We don't know what these commands do
+    static const Command CCD_UNKNOWN_1("Unknown1", "Z330,0,0", '\r', "o");
+    static const Command CCD_UNKNOWN_2("Unknown2", "Z348,0,0", '\r', "o");
+    static const Command CCD_UNKNOWN_3("Unknown3", "Z352,0,1", '\r');
 
 } // namespace SpectrumComms
 #endif  // COMMANDS_HPP
