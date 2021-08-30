@@ -60,6 +60,8 @@ public:
     virtual void on_new_event(const std::string & str, EventType evt) = 0;
     virtual void temperature_callback(const double & temperature) = 0;
     virtual void gain_callback(const long & gain) = 0;
+    virtual void num_flushes_callback(const int & num_flushes) = 0;
+    virtual void shutter_callback(const bool & shutter) = 0;
     ~Listener(){}
 protected:
     Listener(){}

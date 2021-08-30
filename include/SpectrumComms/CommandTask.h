@@ -46,6 +46,7 @@
 #define PREPARE         (yat::FIRST_USER_MSG + 109)
 #define SET_FLUSHES     (yat::FIRST_USER_MSG + 110)
 #define GET_GAIN        (yat::FIRST_USER_MSG + 111)
+#define SET_SHUTTER     (yat::FIRST_USER_MSG + 112)
 
 namespace SpectrumComms
 {
@@ -71,6 +72,7 @@ public:
         int num_flushes;
         int gain;
         int exp_time;
+        bool shutter;
     };
 
     struct FrameInfo
@@ -93,8 +95,7 @@ public:
 
     struct SnapInfo
     {
-        int x_size;
-        int y_size;
+        struct FrameInfo frame_info;
         void* buffer_ptr;
     };
 
@@ -108,10 +109,11 @@ public:
     void set_gain(const int & gain);
     void set_num_flushes(const int & num);
     void prepare(const FrameInfo & frame);
-    void snap(void* buffer_ptr, const int & x_size, const int & y_size);
+    void snap(void* buffer_ptr, const FrameInfo& frame);
     void get_temperature();
     void get_gain();
     void re_config();
+    void set_shutter(const bool & shutter);
 
 
     State get_state();
@@ -153,6 +155,7 @@ private:
     void t_get_temperature();
     void t_get_gain();
     void t_re_config();
+    void t_set_shutter(const bool & shutter);
 
     // State
     void set_state(State state)

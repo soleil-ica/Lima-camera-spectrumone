@@ -27,6 +27,7 @@
 #include "SpectrumOneEventCtrlObj.h"
 #include "SpectrumOneRoiCtrlObj.h"
 #include "SpectrumOneBinCtrlObj.h"
+#include "SpectrumOneShutterCtrlObj.h"
 
 
 using namespace lima;
@@ -41,6 +42,7 @@ Interface::Interface(Camera *cam) :
     m_event = new EventCtrlObj();
     m_roi = new RoiCtrlObj(cam, cam->m_size);
     m_bin = new BinCtrlObj(cam);
+    m_shutter = new ShutterCtrlObj(cam);
     
     cam->init(m_event);
 }
@@ -68,6 +70,7 @@ void Interface::getCapList(CapList &cap_list) const
     cap_list.push_back(HwCap(m_event));
     cap_list.push_back(HwCap(m_roi));
     cap_list.push_back(HwCap(m_bin));
+    cap_list.push_back(HwCap(m_shutter));
 }
 
 void Interface::reset(ResetLevel reset_level)

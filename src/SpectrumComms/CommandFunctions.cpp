@@ -267,6 +267,7 @@ void CommandTask::config_CCD()
     args.resize(1);
     args[0] = "0";
     m_interface.command_and_read(CCD_SET_SHUTTER, &args, true);
+    if(m_listener) m_listener->shutter_callback(false);
 
     m_interface.command_and_read(CCD_STOP_ACQ);
 
@@ -278,6 +279,7 @@ void CommandTask::config_CCD()
     // Set numb flushes
     args[0] = "2";
     m_interface.command_and_read(CCD_SET_FLUSHES, &args, true);
+    if(m_listener) m_listener->num_flushes_callback(2);
 
     // Define format
     args.resize(2);

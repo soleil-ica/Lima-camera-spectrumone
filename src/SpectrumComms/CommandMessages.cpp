@@ -56,6 +56,11 @@ void CommandTask::handle_message(yat::Message& msg)
         t_set_exp_time(msg.get_data<int>());
         break;
 
+        case SET_SHUTTER:
+        YAT_INFO << "CommandTask::handle_message: SET_SHUTTER" << std::endl;
+        t_set_shutter(msg.get_data<bool>());
+        break;
+
         case SET_GAIN:
         YAT_INFO << "CommandTask::handle_message: SET_GAIN" << std::endl;
         t_set_gain(msg.get_data<int>());
@@ -195,7 +200,7 @@ void CommandTask::t_init_sequence(const bool & force_config)
         if(config_overwrite)
         {
             send_all_tables();
-            yat::Thread::sleep(2000);
+            yat::Thread::sleep(800);
             config_CCD();
         }
         set_state(State::Idle);
@@ -248,6 +253,7 @@ void CommandTask::t_set_num_flushes(const int & num_flushes)
     try
     {
         m_interface.command_and_read(CCD_SET_FLUSHES, &args, true);
+        if(m_listener) m_listener->num_flushes_callback(num_flushes);
         set_state(State::Idle);
     }
     catch(const yat::Exception & ex)
@@ -359,15 +365,15 @@ void CommandTask::t_snap(const SnapInfo & frame)
 
     //     count = 2; // Offset of 1 because "o"
     //     unsigned short value = 65535;
-    //     for(size_t y=0; y<frame.y_size; y++)
+    //     for(size_t y=0; y<frame.frame_info.y_size; y++)
     //     {
-    //         for(size_t x=0; x<frame.x_size; x++)
+    //         for(size_t x=0; x<frame.frame_info.x_size; x++)
     //         {
     //             *ptr = value;
     //             count+=2;
     //             ptr++;
     //         }
-    //         count += (m_col_size - frame.x_size) * 2;
+    //         count += (m_col_size - frame.frame_info.x_size) * 2;
     //         value-=10;
     //     }
     //     if(m_listener) m_listener->on_buffer_filled();
@@ -378,7 +384,7 @@ void CommandTask::t_snap(const SnapInfo & frame)
     try
     {
         m_interface.report_info("Configuring acquisition...");
-        size_t expected_size = ((m_col_size)*frame.y_size)*2;
+        size_t expected_size = ((m_col_size)*(frame.frame_info.y_size / frame.frame_info.y_bin))*2;
         yat::Buffer<char> buff(expected_size);
 
         // // close shutter
@@ -400,6 +406,8 @@ void CommandTask::t_snap(const SnapInfo & frame)
         args[0] = "1";
         m_interface.command_and_read(CCD_START, &args, true);
 
+        if(m_listener) m_listener->shutter_callback(true);
+
 
         do
         {
@@ -412,6 +420,8 @@ void CommandTask::t_snap(const SnapInfo & frame)
         }while(IS_NOT_EQUAL(result, "o0\r"));
 
         m_interface.report_info("Acquisition over, loading data...");
+
+        if(m_listener) m_listener->shutter_callback(false);
 
         m_interface.command_and_read(CCD_RESET_IMAGE, true);
 
@@ -473,30 +483,30 @@ void CommandTask::t_snap(const SnapInfo & frame)
         unsigned short *ptr = (unsigned short *)frame.buffer_ptr;
 
         count = 1; // Offset of 1 because "o"
-        for(size_t y=0; y<frame.y_size; y++)
+        for(size_t y=0; y < (frame.frame_info.y_size / frame.frame_info.y_bin); y++)
         {
-            for(size_t x=0; x<frame.x_size; x++)
+            for(size_t x=0; x<frame.frame_info.x_size; x++)
             {
                 *ptr = ((unsigned short)(reinterpret_cast<unsigned char&>(buff.base()[count])) << 8) | (reinterpret_cast<unsigned char&>(buff.base()[count+1]));
                 count+=2;
                 ptr++;
             }
-            count += (m_col_size - frame.x_size) * 2;
+            count += (m_col_size - frame.frame_info.x_size) * 2;
         }
 
         if(m_config.invert_x)
         {
             unsigned short *ptr =  (unsigned short *)frame.buffer_ptr;
             unsigned short tmp;
-            for(size_t y=0; y<frame.y_size; y++)
+            for(size_t y=0; y < (frame.frame_info.y_size / frame.frame_info.y_bin); y++)
             {
-                for(size_t x=0; x<frame.x_size/2; x++)
+                for(size_t x=0; x<frame.frame_info.x_size/2; x++)
                 {
                     tmp = *(ptr + x);
-                    *(ptr + x) = *(ptr + frame.x_size - x);
-                    *(ptr + frame.x_size - x) = tmp;
+                    *(ptr + x) = *(ptr + frame.frame_info.x_size - x);
+                    *(ptr + frame.frame_info.x_size - x) = tmp;
                 }
-                ptr += frame.x_size;
+                ptr += frame.frame_info.x_size;
             }
         }
 
@@ -589,6 +599,33 @@ void CommandTask::t_re_config()
     catch(const yat::Exception & ex)
     {
         m_interface.report_error("RE CONFIG: Failed to re configure CCD!\n");
+        m_interface.report_error(ex.to_string());
+        set_state(State::Fault);
+    }
+}
+
+void CommandTask::t_set_shutter(const bool & open_shutter)
+{
+    if(get_state() != State::Idle)
+    {
+        // m_interface.report_error("SET SHUTTER: Invalid state!\n");
+        return;
+    }
+    set_state(State::Config);
+
+    std::vector<std::string> args(1, "0");
+
+    if (open_shutter) args[0] = "1";
+
+    try
+    {
+        m_interface.command_and_read(CCD_SET_SHUTTER, &args, true);
+        if(m_listener) m_listener->shutter_callback(open_shutter);
+        set_state(State::Idle);
+    }
+    catch(const yat::Exception & ex)
+    {
+        m_interface.report_error("SET SHUTTER: Failed to set shutter!\n");
         m_interface.report_error(ex.to_string());
         set_state(State::Fault);
     }

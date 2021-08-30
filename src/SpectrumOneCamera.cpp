@@ -35,7 +35,9 @@ Camera::Camera(GpibConfig gpib_config, CommandConfig command_config):
     m_event(0),
     m_size(2000, 800),
     m_last_gain(0),
-    m_last_temperature(0)
+    m_last_temperature(0),
+    m_last_shutter(false),
+    m_last_num_flushes(0)
 {
     m_frame_info.x_origin = 0;
     m_frame_info.y_origin = 0;
@@ -99,7 +101,7 @@ void Camera::startAcq()
     buffer_mgr.getNbBuffers(nb_buffers);
     for(int i=0; i<nb_buffers; i++)
     {
-        m_command->snap(buffer_mgr.getFrameBufferPtr(i), m_frame_info.x_size, m_frame_info.y_size);
+        m_command->snap(buffer_mgr.getFrameBufferPtr(i), m_frame_info);
     }
 }
 
@@ -239,4 +241,33 @@ void Camera::setBin(const Bin & set_bin)
 {
     m_frame_info.x_bin = set_bin.getX();
     m_frame_info.y_bin = set_bin.getY();
+}
+
+void Camera::setShutter(const bool & shutter)
+{
+    m_command->set_shutter(shutter);
+}
+
+void Camera::getShutter(bool & shutter)
+{
+    yat::AutoMutex<> guard(m_attr_lock);
+    shutter = m_last_shutter;
+}
+
+void Camera::shutter_callback(const bool & shutter)
+{
+    yat::AutoMutex<> guard(m_attr_lock);
+    m_last_shutter = shutter;
+}
+
+void Camera::num_flushes_callback(const int & num_flushes)
+{
+    yat::AutoMutex<> guard(m_attr_lock);
+    m_last_num_flushes = num_flushes;
+}
+
+void Camera::getNumFlushes(int & num)
+{
+    yat::AutoMutex<> guard(m_attr_lock);
+    num = m_last_num_flushes;
 }

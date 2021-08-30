@@ -67,6 +67,7 @@ namespace lima
         void        setExpTime(const double &);
         void        setGain(const int &);
         void        setNumFlushes(const int &);
+        void        setShutter(const bool & shutter);
         void        setBin(const Bin&);
         void        setRoi(const Roi&);
 
@@ -74,6 +75,8 @@ namespace lima
         virtual void on_new_event(const std::string & str, SpectrumComms::EventType evt);
         virtual void temperature_callback(const double & temperature);
         virtual void gain_callback(const long & gain);
+        virtual void num_flushes_callback(const int & num_flushes);
+        virtual void shutter_callback(const bool & shutter);
 
         void        setFrameDim(const FrameDim& frame_dim);
         void        getFrameDim(FrameDim& frame_dim);
@@ -93,6 +96,8 @@ namespace lima
         void pollGain();
         void getGain(long & gain);
         void getTemperature(double & temperature);
+        void getShutter(bool & shutter);
+        void getNumFlushes(int & num);
 
         int getFrameNb() const;
 
@@ -106,6 +111,8 @@ namespace lima
         yat::Mutex      m_attr_lock;
         double          m_last_temperature;
         long            m_last_gain;
+        bool            m_last_shutter;
+        int             m_last_num_flushes;
 
         
         SoftBufferCtrlObj m_buffer_ctrl_obj;

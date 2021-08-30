@@ -35,6 +35,7 @@ namespace lima
     class EventCtrlObj;
     class RoiCtrlObj;
     class BinCtrlObj;
+    class ShutterCtrlObj;
 
     class DLL_EXPORT Interface : public HwInterface
     {
@@ -46,6 +47,7 @@ namespace lima
         EventCtrlObj*       m_event;
         RoiCtrlObj*         m_roi;
         BinCtrlObj*         m_bin;
+        ShutterCtrlObj*     m_shutter;
 
     public:
         Interface(Camera*);

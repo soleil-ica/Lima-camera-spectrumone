@@ -43,6 +43,7 @@ CommandTask::CommandTask(GpibComms::GpibConfig gpib_config, CommandConfig comman
     m_cam_data.num_flushes = 2;
     m_cam_data.gain = 0;
     m_cam_data.exp_time = 1000;
+    m_cam_data.shutter = false;
     m_cam_data.modified = true;
 
     // launch task:
@@ -118,6 +119,8 @@ void CommandTask::prepare(const FrameInfo & frame)
 {
     YAT_TRACE("CommandTask::prepare");
 
+    set_shutter(false);
+
     // Check if data changed
     if( frame.x_origin != m_cam_data.x_origin ||
         frame.y_origin != m_cam_data.y_origin ||
@@ -145,7 +148,7 @@ void CommandTask::prepare(const FrameInfo & frame)
     }
 }
 
-void CommandTask::snap(void* buffer_ptr, const int & x_size, const int & y_size)
+void CommandTask::snap(void* buffer_ptr, const FrameInfo & frame)
 {
     YAT_TRACE("CommandTask::snap");
 
@@ -153,8 +156,7 @@ void CommandTask::snap(void* buffer_ptr, const int & x_size, const int & y_size)
         DEFAULT_MSG_PRIORITY, true);
     SnapInfo info;
     info.buffer_ptr = buffer_ptr;
-    info.x_size = x_size;
-    info.y_size = y_size;
+    info.frame_info = frame;
     msg->attach_data(info);
     post(msg);
 }
@@ -166,6 +168,20 @@ void CommandTask::get_temperature()
     yat::Message* msg = yat::Message::allocate(GET_TEMPERATURE,
         DEFAULT_MSG_PRIORITY, true);
     post(msg);
+}
+
+void CommandTask::set_shutter(const bool & shutter)
+{
+    YAT_TRACE("CommandTask::set_shutter");
+
+    if(shutter != m_cam_data.shutter)
+    {
+        yat::Message* msg = yat::Message::allocate(SET_SHUTTER, DEFAULT_MSG_PRIORITY, true);
+        msg->attach_data(shutter);
+        post(msg);
+
+        m_cam_data.shutter = shutter;
+    }
 }
 
 void CommandTask::get_gain()
