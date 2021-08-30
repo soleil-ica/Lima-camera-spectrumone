@@ -82,6 +82,7 @@ namespace lima
         void        getCameraName(std::string& name);
 
         void        startAcq();
+        void        stopAcq();
         void        prepareAcq();
         void        reset();
         void        getStatus(HwInterface::StatusType& status);
@@ -104,7 +105,7 @@ namespace lima
         FrameInfo       m_frame_info;
         yat::Mutex      m_attr_lock;
         double          m_last_temperature;
-        long             m_last_gain;
+        long            m_last_gain;
 
         
         SoftBufferCtrlObj m_buffer_ctrl_obj;

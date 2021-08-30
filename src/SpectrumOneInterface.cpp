@@ -76,19 +76,17 @@ void Interface::reset(ResetLevel reset_level)
 
 void Interface::prepareAcq()
 {
-    YAT_ERROR << "Interface::prepareAcq" << std::endl;
     m_cam->prepareAcq();
 }
 
 void Interface::startAcq()
 {
-    YAT_ERROR << "Interface::startAcq" << std::endl;
     m_cam->startAcq();
 }
 
 void Interface::stopAcq()
 {
-    YAT_ERROR << "Interface::stopAcq" << std::endl;
+    m_cam->stopAcq();
 }
 
 void Interface::getStatus(StatusType& status)

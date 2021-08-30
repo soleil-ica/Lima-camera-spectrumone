@@ -59,8 +59,6 @@ void Camera::init(EventCtrlObj* event)
     m_event = event;
     m_command->connect();
     m_command->init_sequence();
-    //pollTemperature();
-    //pollGain();
 }
 
 void Camera::forceTables()
@@ -97,7 +95,17 @@ void Camera::startAcq()
 {
     StdBufferCbMgr& buffer_mgr = m_buffer_ctrl_obj.getBuffer();
     buffer_mgr.setStartTimestamp(Timestamp::now());
-    m_command->snap(buffer_mgr.getFrameBufferPtr(0), m_frame_info.x_size, m_frame_info.y_size);
+    int nb_buffers;
+    buffer_mgr.getNbBuffers(nb_buffers);
+    for(int i=0; i<nb_buffers; i++)
+    {
+        m_command->snap(buffer_mgr.getFrameBufferPtr(i), m_frame_info.x_size, m_frame_info.y_size);
+    }
+}
+
+void Camera::stopAcq()
+{
+    m_command->clear_pending_messages();
 }
 
 void Camera::setFrameDim(const FrameDim& frame_dim)
