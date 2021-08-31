@@ -304,24 +304,6 @@ void CommandTask::t_prepare(const CamData & data)
 
     try
     {
-        // args.resize(1);
-        // args[0] = "0";
-        // m_interface.command_and_read(CCD_SET_SHUTTER, &args, true);
-
-        // m_interface.command_and_read(CCD_STOP_ACQ);
-
-        // args[0] = TO_STRING(data.exp_time);
-        // m_interface.command_and_read(CCD_SET_EXP_TIME, &args, true);
-
-        // args[0] = TO_STRING(data.num_flushes);
-        // m_interface.command_and_read(CCD_SET_FLUSHES, &args, true);
-
-        // Define format
-        // args.resize(2);
-        // args[0] = "0";
-        // args[1] = "1";
-        // m_interface.command_and_read(CCD_DEFINE_FORMAT, &args, true);
-
         args.resize(7);
         args[0] = "0";
         args[1] = TO_STRING(data.x_origin);
@@ -360,47 +342,13 @@ void CommandTask::t_snap(const SnapInfo & frame)
     size_t returned_size, count;
     std::vector<std::string> args(1, "");
 
-    // {
-    //     unsigned short *ptr =  (unsigned short *)frame.buffer_ptr;
-
-    //     count = 2; // Offset of 1 because "o"
-    //     unsigned short value = 65535;
-    //     for(size_t y=0; y<frame.frame_info.y_size; y++)
-    //     {
-    //         for(size_t x=0; x<frame.frame_info.x_size; x++)
-    //         {
-    //             *ptr = value;
-    //             count+=2;
-    //             ptr++;
-    //         }
-    //         count += (m_col_size - frame.frame_info.x_size) * 2;
-    //         value-=10;
-    //     }
-    //     if(m_listener) m_listener->on_buffer_filled();
-    //     set_state(State::Idle);
-    //     return;
-    // }
-
     try
     {
         m_interface.report_info("Configuring acquisition...");
         size_t expected_size = ((m_col_size)*(frame.frame_info.y_size / frame.frame_info.y_bin))*2;
         yat::Buffer<char> buff(expected_size);
 
-        // // close shutter
-        // args[0] = "0";
-        // command_and_read(CCD_SET_SHUTTER, &args, true);
-
-        // // Stop acquisition
-        // command_and_read(CCD_STOP_ACQ, true);
-
-        // // // Set numb flushes
-        // args[0] = "2";
-        // command_and_read(CCD_SET_FLUSHES, &args, true);
-
         result = m_interface.command_and_read(CCD_STATUS);
-
-        
 
         m_interface.report_info("Starting acquisition!");
         args[0] = "1";
@@ -438,46 +386,6 @@ void CommandTask::t_snap(const SnapInfo & frame)
                 "CommandTask::SNAP");
         }
 
-
-        // try{ 
-                
-        //         unsigned char* dta = reinterpret_cast<unsigned char*>(m_interface.m_comms.getBuffer().base());
-        //         buff.memcpy(dta, m_interface.m_comms.getBuffer().length(), count);
-        //         count += m_interface.m_comms.getBuffer().length();
-
-        //         //report_info("Acquisition over, loading data... (" + TO_STRING(count) + " bytes loaded)");
-
-        //         if(force) force = false;
-        //         //YAT_ERROR << "size received =" << count << std::endl;
-
-        //         if(buff.size()-2 == expected_size) break;
-        //     }
-        //     catch(const yat::Exception& e)
-        //     {
-        //         YAT_ERROR << "size received =" << count << std::endl;
-        //         force = true;
-        //         retries++;
-        //         if(retries>3)
-        //         {
-        //             THROW_EXCEPTION(
-        //                 "FAILED",
-        //                 "Didn't receive expected snap data after 5 retries!",
-        //                 "CommandTask::SNAP");
-        //         }
-        //     }
-
-        // yat::File data_file("/home/informatique/ica/ica/ah/output.dat");
-        // std::string giga;
-
-        // for(size_t r=0; r<buff.size(); r++)
-        // {
-        //     Utils::char_to_hex_digits(buff.base()[r], giga);
-        //     giga.push_back(' ');
-        //     if(!(r%16)) giga.push_back('\n');
-        // }
-
-        // data_file.save(giga);
-
         m_interface.report_info("Data loaded!");
 
         unsigned short *ptr = (unsigned short *)frame.buffer_ptr;
@@ -487,6 +395,7 @@ void CommandTask::t_snap(const SnapInfo & frame)
         {
             for(size_t x=0; x<frame.frame_info.x_size; x++)
             {
+                // Reinterpret the chars from the buffer as unsigned chars and then convert to short (16 bits)
                 *ptr = ((unsigned short)(reinterpret_cast<unsigned char&>(buff.base()[count])) << 8) | (reinterpret_cast<unsigned char&>(buff.base()[count+1]));
                 count+=2;
                 ptr++;
@@ -496,6 +405,7 @@ void CommandTask::t_snap(const SnapInfo & frame)
 
         if(m_config.invert_x)
         {
+            // Invert the image on the x axis
             unsigned short *ptr =  (unsigned short *)frame.buffer_ptr;
             unsigned short tmp;
             for(size_t y=0; y < (frame.frame_info.y_size / frame.frame_info.y_bin); y++)
