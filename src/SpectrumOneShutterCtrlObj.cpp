@@ -49,7 +49,7 @@ void ShutterCtrlObj::getModeList(ShutterModeList&  mode_list) const
 
 void ShutterCtrlObj::setMode(ShutterMode  shut_mode) 
 {
-
+    // not implemented
 }
 
 void ShutterCtrlObj::getMode(ShutterMode& shut_mode) const 
@@ -69,20 +69,20 @@ void ShutterCtrlObj::getState(bool& shut_open) const
 
 void ShutterCtrlObj::setOpenTime (double  shut_open_time)
 {
-
+    // not implemented
 }
 
 void ShutterCtrlObj::getOpenTime (double& shut_open_time) const
 {
-    shut_open_time = 0;
+    shut_open_time = 0; // not implemented
 }
 
 void ShutterCtrlObj::setCloseTime(double  shut_close_time)
 {
-
+    // not implemented
 }
 
 void ShutterCtrlObj::getCloseTime(double& shut_close_time) const 
 {
-    shut_close_time = 0;
+    shut_close_time = 0; // not implemented
 }

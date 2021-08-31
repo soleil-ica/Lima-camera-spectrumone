@@ -62,7 +62,7 @@ void DetInfoCtrlObj::setCurrImageType(ImageType curr_image_type)
 
 void DetInfoCtrlObj::getPixelSize(double& x_size,double& y_size)
 {  
-  x_size = y_size = -1.;        // @todo don't know
+  x_size = y_size = -1.; // not implemented
 }
 
 void DetInfoCtrlObj::getDetectorType(std::string& det_type)
@@ -77,11 +77,11 @@ void DetInfoCtrlObj::getDetectorModel(std::string& det_model)
 
 void DetInfoCtrlObj::registerMaxImageSizeCallback(HwMaxImageSizeCallback& cb)
 {
-
+    // not implemented
 }
 
 void DetInfoCtrlObj::unregisterMaxImageSizeCallback(HwMaxImageSizeCallback& cb)
 {
-
+    // not implemented
 }
 

@@ -53,7 +53,7 @@ Camera::Camera(GpibConfig gpib_config, CommandConfig command_config):
 
 Camera::~Camera()
 {
-    YAT_INFO << "Camera::~Camera" << std::endl;
+    // YAT_INFO << "Camera::~Camera" << std::endl;
 }
 
 void Camera::init(EventCtrlObj* event)
@@ -107,28 +107,15 @@ void Camera::startAcq()
 
 void Camera::stopAcq()
 {
+    // This will not stop the acquisition, just clear the message queue of the command task
     m_command->clear_pending_messages();
 }
-
-void Camera::setFrameDim(const FrameDim& frame_dim)
-{
-    // CHeck valid and stuff
-    //m_frame_dim = frame_dim;
-}
-
-void Camera::getFrameDim(FrameDim& frame_dim)
-{
-    //frame_dim = m_frame_dim;
-}
-
 
 int Camera::getFrameNb() const
 {
     return m_frame_nb;
 }
 
-/** @brief test if the camera is monochrome
- */
 bool Camera::isMonochrome() const
 {
     return true;
@@ -178,6 +165,7 @@ void Camera::on_new_event(const std::string & str, SpectrumComms::EventType evt)
 
 void Camera::reset()
 {
+    // Not implemented
 }
 
 void Camera::setExpTime(const double & exp_time)
@@ -185,15 +173,6 @@ void Camera::setExpTime(const double & exp_time)
     m_command->set_exp_time(static_cast<int>(exp_time*1000));
 }
 
-void Camera::setGain(const int & exp_time)
-{
-    m_command->set_gain(exp_time);
-}
-
-void Camera::setNumFlushes(const int & num)
-{
-    m_command->set_num_flushes(num);
-}
 
 void Camera::setRoi(const Roi & set_roi)
 {
@@ -202,6 +181,16 @@ void Camera::setRoi(const Roi & set_roi)
     m_frame_info.x_size = set_roi.getSize().getWidth();
     m_frame_info.y_size = set_roi.getSize().getHeight();
 }
+
+void Camera::setBin(const Bin & set_bin)
+{
+    m_frame_info.x_bin = set_bin.getX();
+    m_frame_info.y_bin = set_bin.getY();
+}
+
+// ============================================================================
+// Camera temperature methods
+// ============================================================================
 
 void Camera::pollTemperature()
 {
@@ -218,6 +207,15 @@ void Camera::getTemperature(double & temperature)
 {
     yat::AutoMutex<> guard(m_attr_lock);
     temperature = m_last_temperature;
+}
+
+// ============================================================================
+// Camera gain methods
+// ============================================================================
+
+void Camera::setGain(const int & exp_time)
+{
+    m_command->set_gain(exp_time);
 }
 
 void Camera::pollGain()
@@ -237,11 +235,9 @@ void Camera::getGain(long & gain)
     gain = m_last_gain;
 }
 
-void Camera::setBin(const Bin & set_bin)
-{
-    m_frame_info.x_bin = set_bin.getX();
-    m_frame_info.y_bin = set_bin.getY();
-}
+// ============================================================================
+// Camera shutter methods
+// ============================================================================
 
 void Camera::setShutter(const bool & shutter)
 {
@@ -258,6 +254,15 @@ void Camera::shutter_callback(const bool & shutter)
 {
     yat::AutoMutex<> guard(m_attr_lock);
     m_last_shutter = shutter;
+}
+
+// ============================================================================
+// Camera num flushes methods
+// ============================================================================
+
+void Camera::setNumFlushes(const int & num)
+{
+    m_command->set_num_flushes(num);
 }
 
 void Camera::num_flushes_callback(const int & num_flushes)

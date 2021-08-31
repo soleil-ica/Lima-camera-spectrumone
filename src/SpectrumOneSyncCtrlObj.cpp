@@ -69,25 +69,25 @@ void SyncCtrlObj::getTrigMode(TrigMode &trig_mode)
 
 void SyncCtrlObj::setExpTime(double set_exp_time)
 {
-    YAT_ERROR << "SyncCtrlObj::setExpTime" << std::endl;
+    // YAT_INFO << "SyncCtrlObj::setExpTime" << std::endl;
     m_exp_time = set_exp_time;
     m_cam->setExpTime(set_exp_time);
 }
 
 void SyncCtrlObj::getExpTime(double & get_exp_time)
 {
-    YAT_ERROR << "SyncCtrlObj::getExpTime" << std::endl;
+    // YAT_INFO << "SyncCtrlObj::getExpTime" << std::endl;
     get_exp_time = m_exp_time;
 }
 
 void SyncCtrlObj::setLatTime(double  lat_time)
 {
-  //No latency managed
+    // not implemented
 }
 
 void SyncCtrlObj::getLatTime(double& lat_time)
 {
-    lat_time = 0.;        // Don't know
+    lat_time = 0.; // not implemented
 }
 
 void SyncCtrlObj::setNbHwFrames(int  nb_frames)
@@ -102,8 +102,9 @@ void SyncCtrlObj::getNbHwFrames(int& nb_frames)
 
 void SyncCtrlObj::getValidRanges(ValidRangesType& valid_ranges)
 {
-  valid_ranges.min_exp_time = 1e-6; // Don't know
-  valid_ranges.max_exp_time = 6000.; // Don't know
-  valid_ranges.min_lat_time = 0.; // Don't know
-  valid_ranges.max_lat_time = 0.; // Don't know
+    // not implemented
+    valid_ranges.min_exp_time = 1e-6; // not implemented
+    valid_ranges.max_exp_time = 6000.; // not implemented
+    valid_ranges.min_lat_time = 0.; // not implemented
+    valid_ranges.max_lat_time = 0.; // not implemented
 }
