@@ -1,3 +1,25 @@
+//###########################################################################
+// This file is part of LImA, a Library for Image Acquisition
+//
+// Copyright (C) : 2009-2021
+// European Synchrotron Radiation Facility
+// BP 220, Grenoble 38043
+// FRANCE
+//
+// This is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation; either version 3 of the License, or
+// (at your option) any later version.
+//
+// This software is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, see <http://www.gnu.org/licenses/>.
+//###########################################################################
+
 #include "lima/Exceptions.h"
 
 #include "SpectrumOneCamera.h"
@@ -13,7 +35,9 @@ Camera::Camera(GpibConfig gpib_config, CommandConfig command_config):
     m_event(0),
     m_size(2000, 800),
     m_last_gain(0),
-    m_last_temperature(0)
+    m_last_temperature(0),
+    m_last_shutter(false),
+    m_last_num_flushes(0)
 {
     m_frame_info.x_origin = 0;
     m_frame_info.y_origin = 0;
@@ -29,7 +53,7 @@ Camera::Camera(GpibConfig gpib_config, CommandConfig command_config):
 
 Camera::~Camera()
 {
-    YAT_INFO << "Camera::~Camera" << std::endl;
+    // YAT_INFO << "Camera::~Camera" << std::endl;
 }
 
 void Camera::init(EventCtrlObj* event)
@@ -37,8 +61,6 @@ void Camera::init(EventCtrlObj* event)
     m_event = event;
     m_command->connect();
     m_command->init_sequence();
-    //pollTemperature();
-    //pollGain();
 }
 
 void Camera::forceTables()
@@ -75,28 +97,25 @@ void Camera::startAcq()
 {
     StdBufferCbMgr& buffer_mgr = m_buffer_ctrl_obj.getBuffer();
     buffer_mgr.setStartTimestamp(Timestamp::now());
-    m_command->snap(buffer_mgr.getFrameBufferPtr(0), m_frame_info.x_size, m_frame_info.y_size);
+    int nb_buffers;
+    buffer_mgr.getNbBuffers(nb_buffers);
+    for(int i=0; i<nb_buffers; i++)
+    {
+        m_command->snap(buffer_mgr.getFrameBufferPtr(i), m_frame_info);
+    }
 }
 
-void Camera::setFrameDim(const FrameDim& frame_dim)
+void Camera::stopAcq()
 {
-    // CHeck valid and stuff
-    //m_frame_dim = frame_dim;
+    // This will not stop the acquisition, just clear the message queue of the command task
+    m_command->clear_pending_messages();
 }
-
-void Camera::getFrameDim(FrameDim& frame_dim)
-{
-    //frame_dim = m_frame_dim;
-}
-
 
 int Camera::getFrameNb() const
 {
     return m_frame_nb;
 }
 
-/** @brief test if the camera is monochrome
- */
 bool Camera::isMonochrome() const
 {
     return true;
@@ -146,6 +165,7 @@ void Camera::on_new_event(const std::string & str, SpectrumComms::EventType evt)
 
 void Camera::reset()
 {
+    // Not implemented
 }
 
 void Camera::setExpTime(const double & exp_time)
@@ -153,15 +173,6 @@ void Camera::setExpTime(const double & exp_time)
     m_command->set_exp_time(static_cast<int>(exp_time*1000));
 }
 
-void Camera::setGain(const int & exp_time)
-{
-    m_command->set_gain(exp_time);
-}
-
-void Camera::setNumFlushes(const int & num)
-{
-    m_command->set_num_flushes(num);
-}
 
 void Camera::setRoi(const Roi & set_roi)
 {
@@ -170,6 +181,16 @@ void Camera::setRoi(const Roi & set_roi)
     m_frame_info.x_size = set_roi.getSize().getWidth();
     m_frame_info.y_size = set_roi.getSize().getHeight();
 }
+
+void Camera::setBin(const Bin & set_bin)
+{
+    m_frame_info.x_bin = set_bin.getX();
+    m_frame_info.y_bin = set_bin.getY();
+}
+
+// ============================================================================
+// Camera temperature methods
+// ============================================================================
 
 void Camera::pollTemperature()
 {
@@ -186,6 +207,15 @@ void Camera::getTemperature(double & temperature)
 {
     yat::AutoMutex<> guard(m_attr_lock);
     temperature = m_last_temperature;
+}
+
+// ============================================================================
+// Camera gain methods
+// ============================================================================
+
+void Camera::setGain(const int & exp_time)
+{
+    m_command->set_gain(exp_time);
 }
 
 void Camera::pollGain()
@@ -205,8 +235,44 @@ void Camera::getGain(long & gain)
     gain = m_last_gain;
 }
 
-void Camera::setBin(const Bin & set_bin)
+// ============================================================================
+// Camera shutter methods
+// ============================================================================
+
+void Camera::setShutter(const bool & shutter)
 {
-    m_frame_info.x_bin = set_bin.getX();
-    m_frame_info.y_bin = set_bin.getY();
+    m_command->set_shutter(shutter);
+}
+
+void Camera::getShutter(bool & shutter)
+{
+    yat::AutoMutex<> guard(m_attr_lock);
+    shutter = m_last_shutter;
+}
+
+void Camera::shutter_callback(const bool & shutter)
+{
+    yat::AutoMutex<> guard(m_attr_lock);
+    m_last_shutter = shutter;
+}
+
+// ============================================================================
+// Camera num flushes methods
+// ============================================================================
+
+void Camera::setNumFlushes(const int & num)
+{
+    m_command->set_num_flushes(num);
+}
+
+void Camera::num_flushes_callback(const int & num_flushes)
+{
+    yat::AutoMutex<> guard(m_attr_lock);
+    m_last_num_flushes = num_flushes;
+}
+
+void Camera::getNumFlushes(int & num)
+{
+    yat::AutoMutex<> guard(m_attr_lock);
+    num = m_last_num_flushes;
 }

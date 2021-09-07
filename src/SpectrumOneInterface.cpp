@@ -1,3 +1,25 @@
+//###########################################################################
+// This file is part of LImA, a Library for Image Acquisition
+//
+// Copyright (C) : 2009-2021
+// European Synchrotron Radiation Facility
+// BP 220, Grenoble 38043
+// FRANCE
+//
+// This is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation; either version 3 of the License, or
+// (at your option) any later version.
+//
+// This software is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, see <http://www.gnu.org/licenses/>.
+//###########################################################################
+
 #include "SpectrumOneInterface.h"
 #include "SpectrumOneCamera.h"
 #include "SpectrumOneDetInfoCtrlObj.h"
@@ -5,6 +27,7 @@
 #include "SpectrumOneEventCtrlObj.h"
 #include "SpectrumOneRoiCtrlObj.h"
 #include "SpectrumOneBinCtrlObj.h"
+#include "SpectrumOneShutterCtrlObj.h"
 
 
 using namespace lima;
@@ -19,6 +42,7 @@ Interface::Interface(Camera *cam) :
     m_event = new EventCtrlObj();
     m_roi = new RoiCtrlObj(cam, cam->m_size);
     m_bin = new BinCtrlObj(cam);
+    m_shutter = new ShutterCtrlObj(cam);
     
     cam->init(m_event);
 }
@@ -46,6 +70,7 @@ void Interface::getCapList(CapList &cap_list) const
     cap_list.push_back(HwCap(m_event));
     cap_list.push_back(HwCap(m_roi));
     cap_list.push_back(HwCap(m_bin));
+    cap_list.push_back(HwCap(m_shutter));
 }
 
 void Interface::reset(ResetLevel reset_level)
@@ -54,19 +79,17 @@ void Interface::reset(ResetLevel reset_level)
 
 void Interface::prepareAcq()
 {
-    YAT_ERROR << "Interface::prepareAcq" << std::endl;
     m_cam->prepareAcq();
 }
 
 void Interface::startAcq()
 {
-    YAT_ERROR << "Interface::startAcq" << std::endl;
     m_cam->startAcq();
 }
 
 void Interface::stopAcq()
 {
-    YAT_ERROR << "Interface::stopAcq" << std::endl;
+    m_cam->stopAcq();
 }
 
 void Interface::getStatus(StatusType& status)
