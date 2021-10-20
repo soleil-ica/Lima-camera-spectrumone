@@ -4,7 +4,7 @@
     <parent>
         <groupId>fr.soleil</groupId>
         <artifactId>super-pom-C-CPP</artifactId>
-        <version>21.3.8</version>
+        <version>21.2.5-64</version>
     </parent>
 
     <groupId>fr.soleil.lib.Lima.Camera</groupId>
@@ -16,14 +16,15 @@
     <description>This module controls the SpectrumOne Camera</description>
 
     <properties>
-        <YAT.version>1.18.2</YAT.version> 
+        <YAT.version>1.18.6</YAT.version> 
         <ni4882.version>17.6</ni4882.version> 
         <libs-64bits>C:\VC_12_MAVEN\LIB_VC12_64</libs-64bits>
 
-        <ni4882-lib>${libs-64bits}\ni4882-${ni4882.version}\lib64\msvc\</ni4882-lib>
-        <ni4882-include>${libs-64bits}\ni4882-${ni4882.version}\include\</ni4882-include>
-        <yat-lib>${libs-64bits}\YAT-${YAT.version}\target\nar\lib\amd64-Windows-msvc\shared\</yat-lib>
-        <yat-include>${libs-64bits}\YAT-${YAT.version}\target\nar\include\</yat-include>
+        <ni4882-lib>${project.basedir}\sdk\lib\</ni4882-lib>
+        <ni4882-include>${project.basedir}\sdk\include\</ni4882-include>
+		
+        <yat-lib>T:\DEV\libs\yat\target\nar\lib\amd64-Windows-msvc\shared\</yat-lib>
+        <yat-include>T:\DEV\libs\yat\include\</yat-include>
     </properties>
     
     <scm>
@@ -79,7 +80,7 @@
 
                             <!-- yat 64 bits -->
                             <lib>
-                                <name>YAT-amd64-Windows-msvc-shared-release-${YAT.version}</name>
+                                <name>YAT-amd64-Windows-msvc12-shared-release-${YAT.version}</name>
                                 <type>shared</type>
                                 <directory>${yat-lib}</directory>
                             </lib>
