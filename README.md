@@ -1,5 +1,5 @@
-# Lima-camera-spectrumoneccd
-SpectrumOneCCD detector Lima plugin
+# Lima-camera-spectrumone
+SpectrumOne detector Lima plugin
 
 Win64 plugin working with NI GPIB/ENET boards. Tested with GPIB/ENET 100, and drivers 488.2 version 17.6 (later versions don't support GPIB/ENET 100, only GPIB/ENET 1000).
 
