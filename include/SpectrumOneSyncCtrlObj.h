@@ -65,7 +65,7 @@ namespace lima
         double          m_exp_time;
     };
 
-  } // namespace Prosilica
+  } // namespace SpectrumOne
 } // namespace lima
 
 #endif // SPECTRUMONESYNCCTRLOBJ_H

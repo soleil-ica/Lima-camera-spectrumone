@@ -57,7 +57,7 @@ namespace lima
         Camera* m_cam;
     };
 
-  } // namespace Prosilica
+  } // namespace SpectrumOne
 } // namespace lima
 
 
