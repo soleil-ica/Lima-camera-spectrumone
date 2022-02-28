@@ -14,26 +14,14 @@
     <packaging>nar</packaging>
     <name>LimaSpectrumOne</name>
     <description>This module controls the SpectrumOne Camera</description>
-
-    <properties>
-        <YAT.version>1.18.6</YAT.version> 
-        <ni4882.version>17.6</ni4882.version> 
-        <libs-64bits>C:\VC_12_MAVEN\LIB_VC12_64</libs-64bits>
-
-        <ni4882-lib>${project.basedir}\sdk\lib\</ni4882-lib>
-        <ni4882-include>${project.basedir}\sdk\include\</ni4882-include>
-		
-        <yat-lib>T:\DEV\libs\yat\target\nar\lib\amd64-Windows-msvc\shared\</yat-lib>
-        <yat-include>T:\DEV\libs\yat\include\</yat-include>
-    </properties>
-    
-    <scm>
-        <connection>scm:git:git://github.com/soleil-ica/Lima-camera-pco.git</connection>
-        <developerConnection>scm:git:git://github.com/soleil-ica/Lima-camera-pco.git</developerConnection>
+	
+	<scm>
+        <connection>scm:git:git://github.com/soleil-ica/Lima-camera-spectrumone.git</connection>
+        <developerConnection>scm:git:git://github.com/soleil-ica/Lima-camera-spectrumone.git</developerConnection>
         <url>https://github.com/soleil-ica/Lima-camera-spectrumone</url>
     </scm>
-    
-    <dependencies>
+	
+	<dependencies>
         <dependency>
             <groupId>fr.soleil.lib</groupId>
             <artifactId>LimaCore-${aol}-shared-${mode}</artifactId>
@@ -41,6 +29,17 @@
         </dependency>
     </dependencies>
 
+    <properties>
+        <YAT.version>1.18.7</YAT.version> 
+        <ni4882.version>17.6</ni4882.version> 
+        <libs-64bits>//filer2.ica.synchrotron-soleil.fr/ica/LIB_VC12_64</libs-64bits>
+
+        <ni4882-lib>${project.basedir}\sdk\lib\</ni4882-lib>
+        <ni4882-include>${project.basedir}\sdk\include\</ni4882-include>
+		
+        <yat-lib>${libs-64bits}\yat\${YAT.version}\lib\</yat-lib>
+		<yat-include>${libs-64bits}\yat\${YAT.version}\include\</yat-include>
+    </properties>
     
     <build>
         <plugins>
