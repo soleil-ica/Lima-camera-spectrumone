@@ -9,7 +9,7 @@
 
     <groupId>fr.soleil.lib.Lima.Camera</groupId>
     <artifactId>LimaSpectrumOne-${aol}-shared-${mode}</artifactId>
-    <version>1.2.0</version>
+    <version>1.2.1</version>
 
     <packaging>nar</packaging>
     <name>LimaSpectrumOne</name>
@@ -25,12 +25,12 @@
         <dependency>
             <groupId>fr.soleil.lib</groupId>
             <artifactId>LimaCore-${aol}-shared-${mode}</artifactId>
-            <version>1.7.10</version>
+            <version>1.7.11</version>
         </dependency>
     </dependencies>
 
     <properties>
-        <YAT.version>1.18.7</YAT.version> 
+        <YAT.version>1.19.5</YAT.version> 
         <ni4882.version>17.6</ni4882.version> 
         <libs-64bits>//filer2.ica.synchrotron-soleil.fr/ica/LIB_VC12_64</libs-64bits>
 
@@ -64,8 +64,6 @@
                             <define>_WINDOWS</define>
                             <define>_USRDLL</define>
                             <define>_WIN32_WINNT=_WIN32_WINNT_WIN7</define>
-                            <define>LIMA_PROCESSCORE_DLL</define>
-                            <define>LIMA_PROCESSCORE_BUILD</define>
                         </defines>
                     </cpp>
                     
